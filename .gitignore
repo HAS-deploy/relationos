@@ -1,0 +1,16 @@
+.DS_Store
+build/
+RelationOS/
+RelationOSWidgets/
+RelationOSTests/
+RelationOS.xcodeproj/
+docs/
+scripts/
+screenshots/
+project.yml
+project_filled.yml
+README.md
+UX_AUDIT.md
+UX_UPGRADE_PLAN.md
+.swiftpm/
+xcuserdata/
