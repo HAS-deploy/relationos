@@ -1,0 +1,9 @@
+.DS_Store
+build/
+*.xcarchive
+RelationOS.xcodeproj/
+.swiftpm/
+xcuserdata/
+*.xcworkspace/xcuserdata/
+.build/
+docs/reviewer-demo-credentials.md

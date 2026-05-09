@@ -1,0 +1,75 @@
+{
+  "identifier" : "RelationOSStoreKit",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "RelationOS",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA"
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "relationos_pro",
+      "localizations" : [],
+      "name" : "RelationOS Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "11.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "relationos.pro.monthly",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "relationos.pro.monthly.trial",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P2W"
+          },
+          "localizations" : [
+            {
+              "description" : "Auto-renewing monthly RelationOS Pro subscription. Unlimited contacts, daily reconnect list, and cooling-relationships highlighting in that view.",
+              "displayName" : "RelationOS Pro — Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "app.relationos.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "RelationOS Pro Monthly",
+          "subscriptionGroupID" : "relationos_pro",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "89.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "relationos.pro.annual",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "relationos.pro.annual.trial",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P2W"
+          },
+          "localizations" : [
+            {
+              "description" : "Auto-renewing annual RelationOS Pro subscription. Unlimited contacts, daily reconnect list, and cooling-relationships highlighting in that view. Save 37% vs monthly.",
+              "displayName" : "RelationOS Pro — Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "app.relationos.pro.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "RelationOS Pro Annual",
+          "subscriptionGroupID" : "relationos_pro",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : { "major" : 3, "minor" : 0 }
+}
