@@ -38,7 +38,12 @@ import jwt
 APP_ID = "6767872788"
 BUNDLE_ID = "com.relationos.app"
 TEAM_ID = "NH2XFPC9KN"
-BUILD_ID = "12bd4a5c-556f-425b-9625-eb40df7b9dfb"
+# BUILD_ID is intentionally None — it used to be hardcoded to a specific
+# v1.0 build and that caused step_c (C2) to silently re-attach a stale
+# build to whatever version was being edited. Step_c now skips the
+# attach when BUILD_ID is None; use `scripts/attach_build_to_v1_1.py`
+# to look up the freshly-uploaded build and attach it.
+BUILD_ID = None
 
 KEY_ID = os.environ.get("ASC_KEY_ID", "48ZWN983JL")
 ISSUER = os.environ.get("ASC_ISSUER_ID", "730b7d86-5366-48ee-b04f-41a5dc0783cb")
@@ -308,14 +313,17 @@ def step_c():
         print(f"  FAILED HTTP {status}: {body}")
         return "FAILED"
     print("  OK -> copyright + releaseType=MANUAL")
-    print(f"[C2] PATCH /v1/appStoreVersions/{vid}/relationships/build (build={BUILD_ID})")
-    status, body = REQ("PATCH", f"/v1/appStoreVersions/{vid}/relationships/build", body={
-        "data": {"type": "builds", "id": BUILD_ID}
-    })
-    if status >= 300:
-        print(f"  FAILED HTTP {status}: {body}")
-        return "PARTIAL"
-    print("  OK -> build attached")
+    if BUILD_ID:
+        print(f"[C2] PATCH /v1/appStoreVersions/{vid}/relationships/build (build={BUILD_ID})")
+        status, body = REQ("PATCH", f"/v1/appStoreVersions/{vid}/relationships/build", body={
+            "data": {"type": "builds", "id": BUILD_ID}
+        })
+        if status >= 300:
+            print(f"  FAILED HTTP {status}: {body}")
+            return "PARTIAL"
+        print("  OK -> build attached")
+    else:
+        print("[C2] skipped — BUILD_ID is None (use scripts/attach_build_to_v1_1.py post-upload)")
     return "SUCCESS"
 
 
