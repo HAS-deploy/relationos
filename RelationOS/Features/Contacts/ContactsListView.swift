@@ -1,4 +1,7 @@
 import SwiftUI
+import Contacts
+import UniformTypeIdentifiers
+import UIKit
 
 struct ContactsListView: View {
     @EnvironmentObject var contacts: ContactsStore
@@ -11,6 +14,18 @@ struct ContactsListView: View {
     @State private var newContactName: String = ""
     @State private var newContactNotes: String = ""
     @State private var newContactTags: String = ""
+
+    // Import flows
+    @State private var showSystemPicker: Bool = false
+    @State private var showBulkImport: Bool = false
+    @State private var showVCardPicker: Bool = false
+    @State private var importBanner: ImportBanner?
+
+    private struct ImportBanner: Identifiable {
+        let id = UUID()
+        let title: String
+        let detail: String?
+    }
 
     private var gate: PremiumGate { PremiumGate(isPremium: purchases.isPremium) }
 
@@ -37,19 +52,74 @@ struct ContactsListView: View {
         .navigationTitle("Contacts")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    if gate.canAddAnotherContact(currentCount: contacts.contacts.count) {
-                        showAddSheet = true
-                    } else {
-                        onGatedTap(.unlimitedContacts)
+                Menu {
+                    Button {
+                        if gate.canAddAnotherContact(currentCount: contacts.contacts.count) {
+                            showAddSheet = true
+                        } else {
+                            onGatedTap(.unlimitedContacts)
+                        }
+                    } label: {
+                        Label("Add manually", systemImage: "square.and.pencil")
+                    }
+
+                    Section("Import") {
+                        Button { showSystemPicker = true } label: {
+                            Label("Pick from Phone…", systemImage: "person.crop.circle.badge.plus")
+                        }
+                        Button { showBulkImport = true } label: {
+                            Label("Import all from Phone…", systemImage: "person.2.fill")
+                        }
+                        Button { showVCardPicker = true } label: {
+                            Label("Import vCard (.vcf)…", systemImage: "doc.text")
+                        }
+                        if OAuthContactsImporter.isConfigured(for: .google) {
+                            Button { importFromOAuth(.google) } label: {
+                                Label("Import from Google…", systemImage: "g.circle")
+                            }
+                        }
+                        if OAuthContactsImporter.isConfigured(for: .microsoft) {
+                            Button { importFromOAuth(.microsoft) } label: {
+                                Label("Import from Microsoft…", systemImage: "m.circle")
+                            }
+                        }
                     }
                 } label: {
                     Image(systemName: "plus")
                 }
             }
         }
-        .sheet(isPresented: $showAddSheet) {
-            addContactSheet
+        .sheet(isPresented: $showAddSheet) { addContactSheet }
+        .sheet(isPresented: $showBulkImport) { ImportFromPhoneView() }
+        .sheet(isPresented: $showSystemPicker) {
+            ContactPickerSheet { picked in
+                showSystemPicker = false
+                guard let picked, !picked.isEmpty else { return }
+                let mapped = picked.compactMap { PhoneContactsImporter.map($0) }
+                let r = contacts.addContacts(mapped)
+                announce(inserted: r.inserted, merged: r.merged, source: "Phone")
+            }
+        }
+        .fileImporter(
+            isPresented: $showVCardPicker,
+            allowedContentTypes: [UTType.vCard],
+            allowsMultipleSelection: true
+        ) { result in
+            handleVCardFiles(result)
+        }
+        .alert(item: $importBanner) { banner in
+            Alert(
+                title: Text(banner.title),
+                message: banner.detail.map(Text.init),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+        .onOpenURL { url in
+            // Share-sheet entry point — someone tapped "Open in RelationOS"
+            // on a .vcf attachment in Mail or Messages.
+            if url.pathExtension.lowercased() == "vcf" {
+                handleVCardFiles(.success([url]))
+            }
         }
     }
 
@@ -59,11 +129,25 @@ struct ContactsListView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(Theme.accent)
             Text("No contacts yet").font(.title3.bold())
-            Text("Tap + to add the first person you want to remember.")
+            Text("Add someone manually, or import from your phone or a vCard.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
+
+            HStack(spacing: 12) {
+                Button { showSystemPicker = true } label: {
+                    Label("Pick contacts", systemImage: "person.crop.circle.badge.plus")
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button { showBulkImport = true } label: {
+                    Label("Import all", systemImage: "person.2.fill")
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.top, 4)
+
             if !purchases.isPremium {
                 Text("Free tier: up to \(PricingConfig.freeContactCap) contacts.")
                     .font(.caption)
@@ -112,7 +196,8 @@ struct ContactsListView: View {
                         contacts.addContact(Contact(
                             name: trimmedName,
                             notes: trimmedNotes,
-                            tags: parsedTags
+                            tags: parsedTags,
+                            source: .manual
                         ))
                         analytics.track(.contactAdded)
                         resetAddSheetFields()
@@ -128,5 +213,76 @@ struct ContactsListView: View {
         newContactName = ""
         newContactNotes = ""
         newContactTags = ""
+    }
+
+    // MARK: - Import helpers
+
+    private func handleVCardFiles(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            var inserted = 0, merged = 0, failed = 0
+            for url in urls {
+                do {
+                    let rows = try VCardImporter.parse(fileURL: url)
+                    let r = contacts.addContacts(rows)
+                    inserted += r.inserted
+                    merged += r.merged
+                } catch {
+                    failed += 1
+                }
+            }
+            announce(inserted: inserted, merged: merged, source: "vCard",
+                     extra: failed > 0 ? "\(failed) file(s) failed to parse." : nil)
+        case .failure(let err):
+            importBanner = ImportBanner(title: "Import failed", detail: err.localizedDescription)
+        }
+    }
+
+    private func importFromOAuth(_ provider: OAuthContactsImporter.Provider) {
+        Task {
+            do {
+                let anchor = currentWindow()
+                let rows = try await OAuthContactsImporter.shared
+                    .importContacts(from: provider, anchor: anchor)
+                let r = contacts.addContacts(rows)
+                let label: String = (provider == .google) ? "Google" : "Microsoft"
+                announce(inserted: r.inserted, merged: r.merged, source: label)
+            } catch OAuthContactsImporter.OAuthError.userCancelled {
+                return
+            } catch OAuthContactsImporter.OAuthError.notConfigured {
+                importBanner = ImportBanner(
+                    title: "Not configured",
+                    detail: "Add the OAuth client ID for this provider in Info.plist to enable."
+                )
+            } catch {
+                importBanner = ImportBanner(
+                    title: "Import failed",
+                    detail: String(describing: error)
+                )
+            }
+        }
+    }
+
+    @MainActor
+    private func currentWindow() -> UIWindow {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow } ?? UIWindow()
+    }
+
+    private func announce(inserted: Int, merged: Int, source: String, extra: String? = nil) {
+        let parts = [
+            inserted > 0 ? "Added \(inserted)" : nil,
+            merged > 0 ? "updated \(merged)" : nil,
+        ].compactMap { $0 }
+        let title = parts.isEmpty ? "Nothing new from \(source)" : "\(parts.joined(separator: ", ")) from \(source)"
+        let detail = [extra].compactMap { $0 }.joined(separator: " ")
+        importBanner = ImportBanner(title: title, detail: detail.isEmpty ? nil : detail)
+        analytics.track(.contactAdded, properties: [
+            "source": source.lowercased(),
+            "inserted": String(inserted),
+            "merged": String(merged),
+        ])
     }
 }

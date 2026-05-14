@@ -24,6 +24,90 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	<!-- Allow the app to open tel:, sms:, and mailto: URLs from the
+	     "Log call/text/email" buttons. iOS 9+ requires apps to declare
+	     intent to canOpenURL for any scheme they probe. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>sms</string>
+		<string>mailto</string>
+	</array>
+
+	<!-- Bulk import path. The system picker (CNContactPickerViewController)
+	     does NOT need this permission; only the full-address-book read
+	     in ImportFromPhoneView does. Keep the prose user-facing. -->
+	<key>NSContactsUsageDescription</key>
+	<string>RelationOS imports the contacts you choose so you can track who you want to stay in touch with. We never read contacts in the background or send them off-device.</string>
+
+	<!-- vCard import: accept .vcf files from the share sheet
+	     ("Open in RelationOS" on a Mail / Messages attachment) and the
+	     in-app document picker. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>vCard</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.vcard</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- OAuth import (Google People + Microsoft Graph). LEFT BLANK
+	     on purpose — populate when ready and the menu items will
+	     appear automatically. See OAuthContactsImporter.swift for
+	     the registration walkthrough.
+
+	     Google: client ID is `<digits>-<hash>.apps.googleusercontent.com`,
+	     redirect scheme is the reversed form
+	     `com.googleusercontent.apps.<digits>-<hash>`.
+	     The redirect scheme must ALSO appear under CFBundleURLTypes
+	     below or the system browser callback will silently drop. -->
+	<key>GoogleOAuthClientID</key>
+	<string></string>
+	<key>GoogleOAuthRedirectScheme</key>
+	<string></string>
+
+	<!-- Microsoft: Application (client) ID from Azure App Registrations.
+	     RedirectURI must be of the form msauth.<bundleId>://auth and the
+	     scheme `msauth.com.relationos.app` must also be in CFBundleURLTypes. -->
+	<key>MicrosoftOAuthClientID</key>
+	<string></string>
+	<key>MicrosoftOAuthRedirectURI</key>
+	<string></string>
+
+	<!-- URL types for OAuth callback delivery. Both schemes are
+	     pre-declared but the values are placeholders; replace the
+	     reversed-client-id with the real one before shipping. The
+	     ASWebAuthenticationSession callback only fires when the
+	     scheme is registered here. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.relationos.app.google-oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.PLACEHOLDER</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.relationos.app.microsoft-oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>msauth.com.relationos.app</string>
+			</array>
+		</dict>
+	</array>
+
 	<key>PostHogHost</key>
 	<string>https://us.i.posthog.com</string>
 	<key>PostHogKey</key>

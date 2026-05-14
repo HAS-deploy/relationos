@@ -28,8 +28,12 @@ final class PricingConfigTests: XCTestCase {
     }
 
     func testPaywallTitleAndSubtitleMatchSpec() {
+        // 2026-05-14: Trial model changed from "free trial on subscribe"
+        // to "Pro free for 14 days from install" (see IntroTrialClock).
+        // Subtitle no longer advertises the trial — the in-paywall banner
+        // surfaces it conditionally based on `purchases.isInIntroTrial`.
         XCTAssertEqual(PricingConfig.paywallTitle, "Unlock RelationOS Pro")
-        XCTAssertEqual(PricingConfig.paywallSubtitle, "Free trial for 14 days. Cancel anytime.")
+        XCTAssertEqual(PricingConfig.paywallSubtitle, "Unlimited contacts and daily reconnect. Cancel anytime.")
     }
 
     func testPaywallBenefitsMatchTrimmedV1Scope() {

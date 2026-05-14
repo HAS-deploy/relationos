@@ -44,17 +44,35 @@ struct SettingsView: View {
     @ViewBuilder
     private var premiumSection: some View {
         Section {
-            if purchases.isPremium {
+            if purchases.hasActiveSubscription {
                 Label("RelationOS Pro unlocked", systemImage: "checkmark.seal.fill")
                     .foregroundStyle(Theme.accent)
+            } else if purchases.isInIntroTrial {
+                Button { showPaywall = true } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Pro free, \(purchases.introTrialDaysRemaining) day\(purchases.introTrialDaysRemaining == 1 ? "" : "s") left")
+                                .font(.headline)
+                                .foregroundStyle(Theme.accent)
+                            Text("Subscribe any time to keep Pro after the trial ends.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                    }
+                }
+                Button("Restore purchases") {
+                    Task { await purchases.restorePurchases() }
+                }
             } else {
                 Button {
                     showPaywall = true
                 } label: {
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("Try RelationOS Pro").font(.headline)
-                            Text("14-day free trial. Cancel anytime.")
+                            Text("Subscribe to RelationOS Pro").font(.headline)
+                            Text("Cancel anytime in iOS Settings → Subscriptions.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -69,8 +87,10 @@ struct SettingsView: View {
         } header: {
             Text("Subscription")
         } footer: {
-            if purchases.isPremium {
+            if purchases.hasActiveSubscription {
                 Text("Manage subscription in iOS Settings → your Apple ID → Subscriptions.")
+            } else if purchases.isInIntroTrial {
+                Text("Your 14-day Pro trial started on first launch — no card, no commitment. After it ends, RelationOS reverts to the free tier (up to \(PricingConfig.freeContactCap) contacts) unless you subscribe.")
             } else {
                 Text("Free tier: up to \(PricingConfig.freeContactCap) contacts. Pro unlocks unlimited contacts, the Daily Reconnect list (5 people every morning), and cooling-relationships highlighting in that view.")
             }
@@ -116,9 +136,14 @@ struct SettingsView: View {
     #if DEBUG
     private var debugSection: some View {
         Section("Developer (DEBUG only)") {
-            Button(purchases.isPremium ? "Disable premium (debug)" : "Enable premium (debug)") {
+            Button(purchases.hasActiveSubscription ? "Cancel sub (debug)" : "Force sub (debug)") {
                 purchases.debugTogglePremium()
             }
+            Button("Rewind trial to day 13") { purchases.debugRewindTrial(daysIn: 13) }
+            Button("Force trial expired") { purchases.debugForceTrialExpired() }
+            Button("Reset trial (re-grant 14 days)") { purchases.debugResetTrial() }
+            Text("isPremium=\(purchases.isPremium ? "Y" : "N")  sub=\(purchases.hasActiveSubscription ? "Y" : "N")  trial=\(purchases.isInIntroTrial ? "Y(\(purchases.introTrialDaysRemaining)d)" : "N")")
+                .font(.caption).foregroundStyle(.secondary)
             Text("Contacts on file: \(contacts.contacts.count)")
                 .font(.caption)
                 .foregroundStyle(.secondary)

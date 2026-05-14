@@ -102,10 +102,19 @@ final class PaywallDisclosureTests: XCTestCase {
                       "Paywall must show a visible Restore Purchases button")
     }
 
-    func testPaywallSourceMentionsFourteenDayFreeTrial() throws {
+    func testPaywallSourceSurfacesInstallTrialBanner() throws {
+        // 2026-05-14: The 14-day trial is granted at install (see
+        // IntroTrialClock), not by tapping a subscription plan. The paywall
+        // surfaces it through a conditional banner gated on
+        // `purchases.isInIntroTrial`, with a per-plan microcopy line that
+        // also varies on that flag.
         let source = try loadPaywallSource()
-        XCTAssertTrue(source.contains("14-day free trial"),
-                      "Paywall must surface the 14-day free trial microcopy")
+        XCTAssertTrue(source.contains("purchases.isInIntroTrial"),
+                      "Paywall must branch trial copy on purchases.isInIntroTrial")
+        XCTAssertTrue(source.contains("introTrialDaysRemaining"),
+                      "Paywall must show the install-trial day counter")
+        XCTAssertTrue(source.contains("Starts after your"),
+                      "Plan card microcopy must surface the install-trial expiry")
     }
 
     func testPaywallDisclosureConstantsListAllFour() {

@@ -21,13 +21,6 @@
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "relationos.pro.monthly",
-          "introductoryOffer" : {
-            "displayPrice" : "0.00",
-            "internalID" : "relationos.pro.monthly.trial",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P2W"
-          },
           "localizations" : [
             {
               "description" : "Auto-renewing monthly RelationOS Pro subscription. Unlimited contacts, daily reconnect list, and cooling-relationships highlighting in that view.",
@@ -48,13 +41,6 @@
           "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "relationos.pro.annual",
-          "introductoryOffer" : {
-            "displayPrice" : "0.00",
-            "internalID" : "relationos.pro.annual.trial",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P2W"
-          },
           "localizations" : [
             {
               "description" : "Auto-renewing annual RelationOS Pro subscription. Unlimited contacts, daily reconnect list, and cooling-relationships highlighting in that view. Save 37% vs monthly.",

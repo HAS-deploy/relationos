@@ -59,6 +59,37 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         PostHogKey: "phc_zsZ6KoWfgoUyVnJEjKi5KC6CuS66xnyQgradTRmqc52s"
         PostHogHost: "https://us.i.posthog.com"
+        # Contacts import + interaction logging (2026-05-14). The first
+        # string is shown verbatim in the permission prompt — keep it
+        # honest and short. The schemes array gates canOpenURL for tel:
+        # / sms: / mailto: used by LogInteractionSheet.
+        NSContactsUsageDescription: "RelationOS imports the contacts you choose so you can track who you want to stay in touch with. We never read contacts in the background or send them off-device."
+        LSApplicationQueriesSchemes:
+          - tel
+          - sms
+          - mailto
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: vCard
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - public.vcard
+        # OAuth (Google People + Microsoft Graph). Values intentionally
+        # blank — fill these before shipping OAuth imports. The matching
+        # CFBundleURLTypes scheme must also be updated. The menu items
+        # in ContactsListView are hidden when either side is blank, so
+        # leaving them empty is safe.
+        GoogleOAuthClientID: ""
+        GoogleOAuthRedirectScheme: ""
+        MicrosoftOAuthClientID: ""
+        MicrosoftOAuthRedirectURI: ""
+        CFBundleURLTypes:
+          - CFBundleURLName: com.relationos.app.google-oauth
+            CFBundleURLSchemes:
+              - com.googleusercontent.apps.PLACEHOLDER
+          - CFBundleURLName: com.relationos.app.microsoft-oauth
+            CFBundleURLSchemes:
+              - msauth.com.relationos.app
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.relationos.app

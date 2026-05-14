@@ -12,6 +12,7 @@ struct ContactDetailView: View {
     @State private var newReminderTitle: String = ""
     @State private var newReminderDate: Date = Calendar.current.date(byAdding: .day, value: 14, to: Date()) ?? Date()
     @State private var showPaywall: PremiumFeature?
+    @State private var showLogSheet: Bool = false
 
     init(contact: Contact) {
         _workingContact = State(initialValue: contact)
@@ -19,6 +20,7 @@ struct ContactDetailView: View {
 
     var body: some View {
         Form {
+            contactInfoSection
             notesSection
             tagsSection
             interactionSection
@@ -32,9 +34,42 @@ struct ContactDetailView: View {
         .sheet(isPresented: $showAddReminder) {
             addReminderSheet
         }
+        .sheet(isPresented: $showLogSheet) {
+            LogInteractionSheet(contact: workingContact)
+                .environmentObject(contacts)
+        }
         .sheet(item: $showPaywall) { feature in
             PaywallView(triggeringFeature: feature)
                 .environmentObject(purchases)
+        }
+    }
+
+    @ViewBuilder
+    private var contactInfoSection: some View {
+        let phone = workingContact.phone ?? ""
+        let email = workingContact.email ?? ""
+        if !phone.isEmpty || !email.isEmpty || workingContact.source != nil {
+            Section("Contact") {
+                if !phone.isEmpty {
+                    HStack {
+                        Image(systemName: "phone.fill").foregroundStyle(.secondary)
+                        Text(phone)
+                        Spacer()
+                    }
+                }
+                if !email.isEmpty {
+                    HStack {
+                        Image(systemName: "envelope.fill").foregroundStyle(.secondary)
+                        Text(email)
+                        Spacer()
+                    }
+                }
+                if let src = workingContact.source, src != .manual {
+                    Text("Imported from \(src.rawValue.capitalized)")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
         }
     }
 
@@ -85,7 +120,12 @@ struct ContactDetailView: View {
             } else {
                 Text("Not yet logged").foregroundStyle(.secondary)
             }
-            Button("Log interaction now") {
+            Button {
+                showLogSheet = true
+            } label: {
+                Label("Log call, text, or email", systemImage: "phone.arrow.up.right")
+            }
+            Button("Mark touched now") {
                 workingContact.lastInteractedAt = Date()
                 contacts.touchInteraction(contactId: workingContact.id)
             }

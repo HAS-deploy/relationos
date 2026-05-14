@@ -45,6 +45,9 @@ struct PaywallView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     header
+                    if purchases.isInIntroTrial {
+                        introTrialBanner
+                    }
                     benefits
                     planPicker
                     purchaseButton
@@ -87,6 +90,28 @@ struct PaywallView: View {
         }
     }
 
+    /// In-trial users see this above the plan picker so they understand
+    /// why they're being asked to subscribe even though Pro currently
+    /// works for them — and how long until that ends.
+    private var introTrialBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(Theme.accent)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("You're on Pro free, \(purchases.introTrialDaysRemaining)-day\(purchases.introTrialDaysRemaining == 1 ? "" : "s") left")
+                    .font(.subheadline.bold())
+                Text("Subscribe any time before the trial ends to keep your full Daily Reconnect list and unlimited contacts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+                .fill(Theme.accent.opacity(0.1))
+        )
+    }
+
     private var benefits: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(PricingConfig.paywallBenefits, id: \.self) { item in
@@ -105,7 +130,7 @@ struct PaywallView: View {
                 title: "RelationOS Pro — Annual",
                 length: "Annual",
                 priceLine: "\(purchases.proAnnualDisplayPrice) / year",
-                trialMicrocopy: "14-day free trial",
+                microcopy: planMicrocopy(annual: true),
                 badge: "Save 37%"
             )
             planCard(
@@ -113,10 +138,22 @@ struct PaywallView: View {
                 title: "RelationOS Pro — Monthly",
                 length: "Monthly",
                 priceLine: "\(purchases.proMonthlyDisplayPrice) / month",
-                trialMicrocopy: "14-day free trial",
+                microcopy: planMicrocopy(annual: false),
                 badge: nil
             )
         }
+    }
+
+    /// In-trial: "Starts when your trial ends". Post-trial: just the
+    /// per-period billing reminder. The 14-day free chunk is the install
+    /// grant, never the subscription's introductoryOffer — so no trial
+    /// microcopy on the cards.
+    private func planMicrocopy(annual: Bool) -> String {
+        if purchases.isInIntroTrial {
+            let n = purchases.introTrialDaysRemaining
+            return "Starts after your \(n)-day Pro trial ends"
+        }
+        return annual ? "Billed yearly" : "Billed monthly"
     }
 
     private func planCard(
@@ -124,7 +161,7 @@ struct PaywallView: View {
         title: String,
         length: String,
         priceLine: String,
-        trialMicrocopy: String,
+        microcopy: String,
         badge: String?
     ) -> some View {
         let isSelected = selectedPlan == plan
@@ -149,7 +186,7 @@ struct PaywallView: View {
                     }
                     Text(length).font(.caption).foregroundStyle(.secondary)
                     Text(priceLine).font(.subheadline.monospacedDigit())
-                    Text(trialMicrocopy).font(.caption).foregroundStyle(.secondary)
+                    Text(microcopy).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -201,7 +238,7 @@ struct PaywallView: View {
                 if purchases.isPurchasing {
                     ProgressView().tint(.white)
                 } else {
-                    Text("Start 14-day free trial")
+                    Text(purchaseButtonTitle)
                         .font(.headline)
                         .foregroundStyle(.white)
                 }
@@ -213,6 +250,13 @@ struct PaywallView: View {
         }
         .buttonStyle(.plain)
         .disabled(purchases.isPurchasing)
+    }
+
+    private var purchaseButtonTitle: String {
+        if purchases.isInIntroTrial {
+            return selectedPlan == .annual ? "Continue annually" : "Continue monthly"
+        }
+        return selectedPlan == .annual ? "Subscribe annually" : "Subscribe monthly"
     }
 
     private var restoreButton: some View {

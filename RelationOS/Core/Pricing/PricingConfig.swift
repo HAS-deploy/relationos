@@ -13,7 +13,11 @@ enum PricingConfig {
     static let allProductIDs: [String] = [proMonthlyProductID, proAnnualProductID]
 
     static let paywallTitle    = "Unlock RelationOS Pro"
-    static let paywallSubtitle = "Free trial for 14 days. Cancel anytime."
+    /// Subtitle is copy shown above the plan picker. The install-trial
+    /// granted at first launch is independent of the subscription, so we
+    /// no longer advertise a per-product free trial — see PaywallView for
+    /// the "X days of Pro free remaining" banner that runs separately.
+    static let paywallSubtitle = "Unlimited contacts and daily reconnect. Cancel anytime."
 
     static let paywallBenefits: [String] = [
         "Unlimited contacts",

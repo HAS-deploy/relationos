@@ -3,7 +3,19 @@ import StoreKit
 
 @MainActor
 final class PurchaseManager: ObservableObject {
+    /// "Has Pro entitlement right now" — true for paid subscribers AND for
+    /// users still inside the 14-day install trial. Single source of truth
+    /// for all UI gates.
     @Published private(set) var isPremium: Bool = false
+    /// True only when isPremium is granted because of the install-trial
+    /// (not a real subscription). Drives the "X days of Pro free remaining"
+    /// banner and lets analytics tell trial-Pro from paid-Pro.
+    @Published private(set) var isInIntroTrial: Bool = false
+    /// Days remaining in the install trial (0 when expired or never started).
+    @Published private(set) var introTrialDaysRemaining: Int = 0
+    /// True after a real subscription has been verified. Independent of the
+    /// install trial — used for "should we even show the paywall" decisions.
+    @Published private(set) var hasActiveSubscription: Bool = false
     @Published private(set) var proMonthlyProduct: Product?
     @Published private(set) var proAnnualProduct: Product?
     @Published private(set) var isPurchasing: Bool = false
@@ -14,22 +26,51 @@ final class PurchaseManager: ObservableObject {
     @Published private(set) var lastFailureReason: String?
 
     private var updatesTask: Task<Void, Never>?
+    /// Legacy key — kept so existing installs that previously cached an
+    /// `isPremium=true` bit still recognise their subscription before the
+    /// first refreshEntitlements() call returns. New writes go through
+    /// `sharedDefaults.set(..., forKey: subscriptionKey)` below.
     private let premiumKey = "relationos.isPremium"
+    private let subscriptionKey = "relationos.hasActiveSubscription"
+
+    private let introTrial: IntroTrialClock
 
     /// App Group UserDefaults — same suite the widget extension reads from
     /// to decide between rendering the Daily Reconnect list and the
     /// "Upgrade to Pro" placeholder. See `ContactsStore.appGroupIdentifier`.
     private let sharedDefaults: UserDefaults = ContactsStore.appGroupDefaults()
 
-    init() {
-        var initial = sharedDefaults.bool(forKey: premiumKey)
+    init(introTrial: IntroTrialClock = IntroTrialClock()) {
+        self.introTrial = introTrial
+        // Stamp install on first ever launch. Idempotent on every subsequent
+        // launch — the existing stamp is preserved.
+        introTrial.recordInstallIfNeeded()
+
+        // Restore the cached subscription bit (subKey is the new authoritative
+        // store; premiumKey is read as a legacy fallback for pre-trial-rewrite
+        // installs that wrote to it).
+        var subscribed = sharedDefaults.bool(forKey: subscriptionKey)
+        if !subscribed && sharedDefaults.bool(forKey: premiumKey) {
+            subscribed = true
+        }
+
         #if DEBUG
         if ProcessInfo.processInfo.environment["RELATIONOS_FORCE_PREMIUM"] == "1"
             || sharedDefaults.bool(forKey: "RELATIONOS_FORCE_PREMIUM") {
-            initial = true
+            subscribed = true
         }
         #endif
-        self.isPremium = initial
+
+        self.hasActiveSubscription = subscribed
+        self.isInIntroTrial = introTrial.isWithinTrial()
+        self.introTrialDaysRemaining = introTrial.daysRemaining()
+        let composite = subscribed || self.isInIntroTrial
+        self.isPremium = composite
+        // Sync the composite to the App Group on every launch so the
+        // widget sees the right state immediately — even on the very
+        // first launch where the install trial has just been stamped.
+        sharedDefaults.set(composite, forKey: premiumKey)
+        UserDefaults.standard.set(composite, forKey: premiumKey)
     }
 
     deinit { updatesTask?.cancel() }
@@ -92,7 +133,7 @@ final class PurchaseManager: ObservableObject {
         switch result {
         case .success(let verification):
             let transaction = try checkVerified(verification)
-            setPremium(true)
+            setSubscribed(true)
             await transaction.finish()
         case .userCancelled:
             lastFailureReason = "user_cancelled"
@@ -123,7 +164,7 @@ final class PurchaseManager: ObservableObject {
         // so the debug-toggle path is consistent across launch and refresh.
         if ProcessInfo.processInfo.environment["RELATIONOS_FORCE_PREMIUM"] == "1"
             || sharedDefaults.bool(forKey: "RELATIONOS_FORCE_PREMIUM") {
-            setPremium(true); return
+            setSubscribed(true); return
         }
         #endif
         var entitled = false
@@ -134,7 +175,34 @@ final class PurchaseManager: ObservableObject {
                 entitled = true
             }
         }
-        setPremium(entitled)
+        setSubscribed(entitled)
+    }
+
+    /// Re-read the install-trial clock and republish derived state. Call
+    /// from a foreground notification so the banner ticks down without a
+    /// relaunch when the user crosses midnight.
+    func refreshTrialState() {
+        let within = introTrial.isWithinTrial()
+        let days = introTrial.daysRemaining()
+        if within != isInIntroTrial { self.isInIntroTrial = within }
+        if days != introTrialDaysRemaining { self.introTrialDaysRemaining = days }
+        recomputeIsPremium()
+    }
+
+    private func recomputeIsPremium() {
+        let next = hasActiveSubscription || isInIntroTrial
+        if next != isPremium {
+            let wasPremium = isPremium
+            isPremium = next
+            // Mirror to App Group for the widget. The widget reads only the
+            // composite isPremium — it doesn't care which side granted it.
+            sharedDefaults.set(next, forKey: premiumKey)
+            UserDefaults.standard.set(next, forKey: premiumKey)
+            WidgetReloader.reloadAllIfAvailable()
+            if next != wasPremium {
+                Task { await DailyReconnectNotification.sync(isPremium: next) }
+            }
+        }
     }
 
     private func observeTransactionUpdates() {
@@ -152,23 +220,22 @@ final class PurchaseManager: ObservableObject {
     private func handleVerifiedUpdate(_ transaction: Transaction) async {
         if PricingConfig.allProductIDs.contains(transaction.productID),
            transaction.revocationDate == nil {
-            setPremium(true)
+            setSubscribed(true)
         } else if transaction.revocationDate != nil {
             await refreshEntitlements()
         }
         await transaction.finish()
     }
 
-    private func setPremium(_ value: Bool) {
-        let wasPremium = self.isPremium
-        self.isPremium = value
-        sharedDefaults.set(value, forKey: premiumKey)
-        // Mirror to standard for any legacy reader; harmless duplicate.
-        UserDefaults.standard.set(value, forKey: premiumKey)
-        WidgetReloader.reloadAllIfAvailable()
-        if value != wasPremium {
-            Task { await DailyReconnectNotification.sync(isPremium: value) }
+    /// Update the subscription bit (paid Pro). Composite `isPremium` is
+    /// recomputed from this + the install-trial state via
+    /// `recomputeIsPremium()`.
+    private func setSubscribed(_ value: Bool) {
+        if value != hasActiveSubscription {
+            self.hasActiveSubscription = value
+            sharedDefaults.set(value, forKey: subscriptionKey)
         }
+        recomputeIsPremium()
     }
 
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
@@ -184,7 +251,21 @@ final class PurchaseManager: ObservableObject {
     }
 
     #if DEBUG
-    func debugTogglePremium() { setPremium(!isPremium) }
-    func debugSetPremium(_ value: Bool) { setPremium(value) }
+    func debugTogglePremium() { setSubscribed(!hasActiveSubscription) }
+    func debugSetPremium(_ value: Bool) { setSubscribed(value) }
+    /// Test hooks for the install trial.
+    func debugRewindTrial(daysIn: Int) {
+        introTrial.debugRewind(daysIn: daysIn)
+        refreshTrialState()
+    }
+    func debugForceTrialExpired() {
+        introTrial.debugForceExpired()
+        refreshTrialState()
+    }
+    func debugResetTrial() {
+        introTrial.debugReset()
+        introTrial.recordInstallIfNeeded()
+        refreshTrialState()
+    }
     #endif
 }

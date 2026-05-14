@@ -5,6 +5,8 @@ struct RelationOSApp: App {
     @StateObject private var purchases = PurchaseManager()
     @StateObject private var settings = SettingsStore()
     @StateObject private var contacts = ContactsStore()
+    @StateObject private var callObserver = CallObserver()
+    @Environment(\.scenePhase) private var scenePhase
     private let analytics: AnalyticsService = ConsoleAnalytics()
     private let reminders = ReminderManager()
 
@@ -22,9 +24,19 @@ struct RelationOSApp: App {
                 .environmentObject(purchases)
                 .environmentObject(settings)
                 .environmentObject(contacts)
+                .environmentObject(callObserver)
                 .environment(\.analytics, analytics)
                 .environment(\.reminders, reminders)
-                .task { await purchases.start() }
+                .task {
+                    await purchases.start()
+                    callObserver.start()
+                }
+                .onChange(of: scenePhase) { phase in
+                    // Tick the install-trial day counter when the user
+                    // returns from background, so the banner crosses midnight
+                    // correctly without a full relaunch.
+                    if phase == .active { purchases.refreshTrialState() }
+                }
                 .preferredColorScheme(settings.forcedColorScheme)
         }
     }
