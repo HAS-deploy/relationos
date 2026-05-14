@@ -35,9 +35,9 @@ A private personal CRM that lives entirely on the user's iPhone — no account r
 
 - **StoreKit 2 auto-renewable subscriptions** (no Stripe, no web purchase, no reader-app exception needed — purely digital content unlocked in-app).
 - **Free tier:** up to **100 contacts**, basic notes + reminders. Intelligence/AI features paywalled.
-- **Pro Monthly:** $11.99 / month — Tier 12 — **2-week free trial** (Apple's closest to 14d).
-- **Pro Annual:** $89.99 / year — Tier 90 — **2-week free trial**.
-- Trial: full Pro features, **no credit card required** beyond Apple's standard, available on **both** monthly and annual subscriptions, default toggle = annual.
+- **Pro Monthly:** $11.99 / month — Tier 12. No StoreKit introductoryOffer (v1.1 dropped them).
+- **Pro Annual:** $89.99 / year — Tier 90. No StoreKit introductoryOffer.
+- Trial: **14 days of Pro granted at install** via `Core/Purchases/IntroTrialClock` (App Group UserDefaults stamp). Runs once per device install, not per Apple ID. Paywall default toggle = annual.
 - Subscription group: `RelationOS Pro` (one group, both products).
 - No lifetime SKU at v1 (revisit at month 6 if user demand surfaces).
 

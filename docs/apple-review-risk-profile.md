@@ -46,7 +46,7 @@ Pick exactly one primary classification:
 - [ ] **External Stripe / web checkout** — ONLY valid if selling physical goods or a real-world service outside the app (**3.1.3**); digital goods consumed in-app MUST use IAP (**3.1.1**)
 - [ ] **SaaS with external sign-up** — reader-app exception (**3.1.3(a)**) may apply; user must be able to sign up / pay outside the app
 
-Payment model in use: Free tier (100 contacts cap) + auto-renewable subscription "RelationOS Pro" via StoreKit 2 IAP. Two products in one subscription group: `app.relationos.pro.monthly` ($11.99/mo, Tier 12) and `app.relationos.pro.annual` ($89.99/yr, Tier 90). Both products offer a 2-week free trial (Apple's closest discrete value to 14 days) as an introductory offer for new subscribers. Full Pro features unlocked during trial. No credit card required beyond Apple's standard. No Stripe, no web checkout, no reader-app exception.
+Payment model in use: Free tier (100 contacts cap) + auto-renewable subscription "RelationOS Pro" via StoreKit 2 IAP. Two products in one subscription group: `app.relationos.pro.monthly` ($11.99/mo, Tier 12) and `app.relationos.pro.annual` ($89.99/yr, Tier 90). **Neither product carries a StoreKit introductoryOffer in v1.1.** The 14-day free Pro period is an install-time grant in the app (`Core/Purchases/IntroTrialClock.swift`); reviewer sees Pro features immediately after install without subscribing. No Stripe, no web checkout, no reader-app exception.
 
 ### Subscription disclosures required (only if subs) — all mandatory on the paywall
 
@@ -90,11 +90,11 @@ without lying, stop and trace it from the code before continuing.
 | User-entered text / documents | Yes — notes the user writes about their contacts | On-device App-Group UserDefaults (SwiftData in v1.1) | Nobody | No | No |
 | Purchase history | StoreKit-managed; we read entitlement state only | Apple receipts | Apple | No (Apple-managed) | No |
 | Device ID / advertising ID | No | — | — | — | — |
-| Usage analytics | No third-party analytics SDK in v1. Apple MetricKit (on-device aggregation) only. | On-device | Apple (anonymized OS-level) | No | No |
-| Crash logs | Apple MetricKit only — on-device aggregation, no third-party crash SDK | On-device | Apple (anonymized OS-level) | No | No |
+| Usage analytics | PostHog (`phc_zsZ6K…`, `https://us.i.posthog.com`) — anonymous product-interaction events tagged with a random per-install identifier. Configured `personProfiles=.never`, `captureScreenViews=false`, `captureApplicationLifecycleEvents=false`, `sessionReplay=false`. Contact data is never in the payload. | Off-device (PostHog Cloud, US region) | PostHog (processor) | No | No |
+| Crash logs | Apple MetricKit (on-device aggregation) + PostHog crash data for diagnostics | On-device + PostHog | Apple + PostHog | No | No |
 
 Nutrition label target (what Stage 8 will click through in ASC → App Privacy):
-**"The developer does not collect any data from this app."** Every category on the App Privacy questionnaire answered "Not Collected." StoreKit purchases and OS-level MetricKit telemetry are excluded from App Privacy disclosure (per Apple's own documentation) since they are framework-mediated and not collected by the developer. iCloud sync is deferred to v1.1 and is not enabled in this build.
+**"Product Interaction"**, **"Crash Data"**, **"Performance Data"**, **"Other Diagnostic Data"** all marked Collected, Linked-to-User=No, Used-for-Tracking=No, purposes={Analytics, App Functionality}. Matches `RelationOS/Resources/PrivacyInfo.xcprivacy` and `docs/app-privacy-answers.md`. StoreKit purchases are excluded (framework-mediated). Cross-device sync is on the roadmap and is off by default.
 
 ## 6. Account deletion (5.1.1(v))
 
@@ -119,7 +119,7 @@ packaging to look up nutrition info" is a pass.
 | Photos (add) | `NSPhotoLibraryAddUsageDescription` | (not used in v1) |
 | Location (when-in-use) | `NSLocationWhenInUseUsageDescription` | (removed in v1 — deferred) |
 | Location (always) | `NSLocationAlwaysAndWhenInUseUsageDescription` | (not used in v1 — deferred) |
-| Contacts | `NSContactsUsageDescription` | (removed in v1 — deferred) |
+| Contacts | `NSContactsUsageDescription` | "RelationOS imports the contacts you choose so you can track who you want to stay in touch with. We never read contacts in the background or send them off-device." |
 | Calendar | `NSCalendarsUsageDescription` | (removed in v1 — deferred) |
 | HealthKit read | `NSHealthShareUsageDescription` | (not used in v1) |
 | HealthKit write | `NSHealthUpdateUsageDescription` | (not used in v1) |
@@ -137,7 +137,7 @@ requires specific evidence in review notes.
 - [ ] AI / ML / generative content → may require 17+ rating, content filtering disclosure
 - [ ] Parses user documents (PDF / contracts / receipts / recipes / UGC)
 - [ ] Uploads user files to a server
-- [ ] Embeds/bundles third-party SDKs that collect data
+- [x] Embeds/bundles third-party SDKs that collect data → PostHog (anonymous product analytics, see §5)
 - [ ] Health, fitness, or medical data → **HealthKit / 5.1.3**
 - [ ] Financial data / transactions / banking
 - [ ] Kids (age rating under 13) → **5.1.4 Kids category** rules apply
@@ -161,18 +161,20 @@ data the app needs, and any "skip to premium" toggle for validating paywall
 success screens.
 
 ```
-1. Launch RelationOS — app opens directly to the Contacts tab. No account creation, no login, no onboarding.
-2. Tap "+" → enter "John Doe", notes "investor at Acme Ventures", tags "VC". Save.
-3. Open the contact, tap "Add reminder" → "Follow up in 2 weeks". Confirm a local notification is scheduled.
-4. Repeat steps 2-3 with 2-3 more contacts to populate the daily reconnect list.
-5. Tap the **Daily Reconnect** tab (paywalled trigger), or open **Settings → Try RelationOS Pro** (explicit paywall trigger). Paywall sheet renders with:
+1. Launch RelationOS — app opens directly to the Contacts tab. No account, no login, no onboarding.
+2. **Pro is unlocked automatically for 14 days from install (local grant, NOT a StoreKit introductory offer).** Reviewer will see Pro features without subscribing.
+3. Tap "+" → "Pick from Phone" (system picker, no permission prompt) or "Import all from Phone…" (one-time Contacts permission, then explicit row selection). Alternatively "Add manually" — enter name + notes + tags.
+4. Open a contact → "Log call, text, or email" → exercise manual log + Apple's system composers. iOS does not share SMS/iMessage/call/email history; the log is the substitute.
+5. Tap "Add reminder" → confirm a local notification is scheduled.
+6. Open **Settings → "Pro free, N days left"** → paywall sheet renders with:
+   - "You're on Pro free, N days left" banner (the install-trial disclosure)
    - Subscription title + length + price
    - All four 3.1.2(a) auto-renew disclosure sentences
    - Privacy Policy + Terms of Use links (tappable, live URLs)
    - Restore Purchases button visible
-   - "Start free trial" CTA + "Cancel anytime" microcopy
-6. Tap "Start 14-day free trial" → StoreKit sandbox sheet presents the 2-week trial.
-7. (Optional) Settings → Privacy → "Delete all data" → confirm → app returns to first-launch state.
+   - "Subscribe annually" / "Continue annually" CTA (NOT "Start free trial" — there is no StoreKit trial)
+7. Tap "Subscribe annually" → StoreKit sandbox prompts for $89.99/year. There is no StoreKit trial sheet — the 14-day Pro period is the install grant from step 2.
+8. (Optional) Settings → Privacy → "Delete all data" → confirm → app returns to first-launch state.
 ```
 
 The app does not require a server backend. No demo credentials. Reviewer flow is entirely on-device.
@@ -202,25 +204,13 @@ Backends that MUST be up during review: the four `has-deploy.github.io/relationo
 Draft the reviewer-notes text here (Stage 7 copies it to ASC). Hit every
 flagged item from section 8:
 
-```
-RelationOS is a private, on-device personal CRM. Reviewer can exercise the full app without creating an account.
+See `docs/app-review-notes.md` for the v1.1 canonical version that gets pasted into ASC. Both files now reflect:
 
-REVIEWER FLOW (no demo credentials required — there is no account model):
-1. Launch app — opens directly to the Contacts tab.
-2. Tap "+" to add a contact (manual entry: name, notes, tags).
-3. Open the contact, set a reminder; confirm local notification scheduling.
-4. Open the paywall via the Daily Reconnect tab or Settings → "Try RelationOS Pro" — verify the four 3.1.2(a) disclosure sentences, Privacy Policy link, Terms link, and Restore Purchases button are all visible and functional.
-5. (Optional) Settings → "Delete all data" exercises the data wipe path.
-
-REGARDING AI / ML:
-v1 ships no AI features. AI meeting notes and semantic search are on the v1.1 roadmap and are not advertised in this submission. No data is sent to any third-party LLM. No data leaves the device.
-
-REGARDING DATA / 5.1.1 / App Privacy:
-RelationOS collects no data. All user data lives in App-Group UserDefaults on-device (SwiftData migration in v1.1). iCloud sync is deferred to v1.1 and is not enabled in this build. The App Privacy nutrition label is "The developer does not collect any data from this app."
-
-REGARDING SUBSCRIPTIONS / 3.1.2(a):
-The paywall renders all four required auto-renew disclosure sentences verbatim, plus tappable Privacy Policy and Terms of Use links and a visible Restore Purchases action. Both products (`app.relationos.pro.monthly` $11.99, `app.relationos.pro.annual` $89.99) offer a 2-week introductory free trial.
-```
+- The 14-day Pro free period is an install-time grant (not a StoreKit introductoryOffer); reviewer sees Pro state without subscribing.
+- PostHog is the third-party analytics SDK; events are anonymous, per-install random ID, no contact data; matches PrivacyInfo.xcprivacy + the new App Privacy nutrition answers.
+- Contacts permission is requested only by the bulk-import path; the system picker does not request it.
+- Google / Microsoft OAuth import code is shipped but hidden (client IDs blank in Info.plist) — read-only contacts scopes, not a login flow, 4.8 N/A.
+- CXCallObserver is registered only on-demand inside the LogInteractionSheet flow (defer-start fix in v1.1) — no background call monitoring.
 
 ## 12. Required App Store screenshots
 

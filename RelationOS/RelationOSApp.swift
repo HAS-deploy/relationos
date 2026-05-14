@@ -5,16 +5,23 @@ struct RelationOSApp: App {
     @StateObject private var purchases = PurchaseManager()
     @StateObject private var settings = SettingsStore()
     @StateObject private var contacts = ContactsStore()
-    @StateObject private var callObserver = CallObserver()
+    // NOTE: CallObserver is intentionally NOT instantiated at launch.
+    // CXCallObserver registers a system-wide audio/call delegate, which a
+    // contacts app shouldn't hold without a visible reason. The
+    // LogInteractionSheet creates and starts the observer locally only
+    // when the user opens it — so RelationOS observes call state only
+    // for the duration of the user's logging session.
     @Environment(\.scenePhase) private var scenePhase
     private let analytics: AnalyticsService = ConsoleAnalytics()
     private let reminders = ReminderManager()
 
     init() {
-        // PortfolioAnalytics is a no-op when PostHog is not linked (the project
-        // does not depend on PostHog) — the start() call here is harmless and
-        // keeps the call-site uniform with other apps in the portfolio. No
-        // network traffic is generated. See Core/Analytics/PortfolioAnalytics.swift.
+        // PortfolioAnalytics wires PostHog with privacy-strict config
+        // (`personProfiles=.never`, no screen-views, no lifecycle events,
+        // no session replay). Events leave the device tagged with a
+        // random per-install ID — no contact data, no name/email/phone.
+        // App Privacy nutrition answers + PrivacyInfo.xcprivacy are the
+        // source of truth for what's collected.
         PortfolioAnalytics.shared.start(appName: "relationos")
     }
 
@@ -24,13 +31,9 @@ struct RelationOSApp: App {
                 .environmentObject(purchases)
                 .environmentObject(settings)
                 .environmentObject(contacts)
-                .environmentObject(callObserver)
                 .environment(\.analytics, analytics)
                 .environment(\.reminders, reminders)
-                .task {
-                    await purchases.start()
-                    callObserver.start()
-                }
+                .task { await purchases.start() }
                 .onChange(of: scenePhase) { phase in
                     // Tick the install-trial day counter when the user
                     // returns from background, so the banner crosses midnight

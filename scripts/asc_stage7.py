@@ -59,30 +59,36 @@ EU = {"AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA",
       "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE"}
 EXCLUDE = EU | {"VNM", "KOR"}
 
-DESCRIPTION = """RelationOS is a personal CRM that lives entirely on your phone.
+# v1.1 (2026-05-14) — rewrite kept honest per Stage 4A audit findings.
+# Source of truth: docs/metadata.md. Keep this constant block in sync.
+TARGET_VERSION_STRING = "1.1"
 
-Most relationship apps want your contacts uploaded to their servers. RelationOS doesn't. Your people, your notes, your reminders — all of it stays on your iPhone. No account. No data leaves your device.
+DESCRIPTION = """RelationOS is a personal CRM that lives on your phone.
+
+Most relationship apps want your contacts uploaded to their servers. RelationOS doesn't. Your people, your notes, and your reminders stay on your iPhone. No account. Contact data never leaves your device.
 
 WHAT IT DOES
 
-• Remember everyone — Add contacts, notes, and tags as you meet people. The little things they share with you survive on your phone, ready next time it matters.
+• Remember everyone — Add contacts, notes, and tags as you meet people. Import them in seconds from your iPhone Contacts (pick selectively or in bulk) or from a vCard attachment.
 
 • Daily reconnect list — Five people every morning who are slipping away. See who you're losing touch with before the relationship goes cold.
 
 • Cooling relationships highlighted — Contacts you haven't heard from in a while bubble up first, so you reach out before it's too late.
 
-• Reminders — "Follow up in 2 weeks." Local notifications fire on your phone — no server, no calendar dependency.
+• Quick log — One tap to call, text, or email a contact through Apple's standard composers. RelationOS records what you sent — iOS doesn't share call or text history with third-party apps, so the log is the substitute.
 
-• Notes that survive — Capture the small things people share with you. Their kid's name. The book they recommended. The conflict they're working through.
+• Reminders — "Follow up in 2 weeks." Local notifications fire on your phone, no server, no calendar dependency.
+
+• Notes that survive — Capture the small things people share. Their kid's name. The book they recommended. The conflict they're working through.
 
 • iOS-native — Home Screen and Lock Screen widgets surface your daily reconnect list at a glance.
 
-PRIVACY FIRST
+PRIVACY
 
-• 100% on-device by default
-• No account required
-• No tracking, no analytics that identify you
-• Your data stays on your iPhone — no cloud back-end. Cross-device support is on the v1.1 roadmap.
+• Contacts, notes, and reminders are stored only on your device.
+• No account required.
+• Anonymous product analytics (PostHog) help us improve the app; they never include your contact data and are detailed in the privacy policy.
+• Cross-device sync is on the roadmap and is off by default.
 
 PERFECT FOR
 
@@ -92,24 +98,23 @@ PERFECT FOR
 
 PRICING
 
-• Free: track up to 100 contacts with notes and reminders
-• Pro: unlimited contacts, daily reconnect list (5 people every morning), cooling-relationships highlighting, daily reconnect widget content
+• Every install gets 14 days of Pro free — no card, no commitment.
+• After day 14: free tier (up to 100 contacts, notes, reminders, quick-log composers, contact import). Pro unlocks unlimited contacts, the Daily Reconnect list, and cooling-relationships highlighting.
   - $11.99 / month
   - $89.99 / year (save 37%)
-  - 14-day free trial — no card required
 
-Cancel anytime in iOS Settings.
+Subscriptions auto-renew unless canceled at least 24 hours before the period ends. Manage or cancel in iOS Settings → your Apple ID → Subscriptions.
 
 Privacy policy: https://has-deploy.github.io/relationos/privacy
-Support: https://has-deploy.github.io/relationos/support
-Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"""
+Terms of Use: https://has-deploy.github.io/relationos/terms
+Support: https://has-deploy.github.io/relationos/support"""
 
 KEYWORDS = "personal crm,relationship,contacts,reminders,follow up,network,private,offline,memory,reconnect"
-PROMO = "Remember everyone who matters. Smart reminders, decay detection, and a daily reconnect list — all on your iPhone. Nothing leaves your device unless you say so."
+PROMO = "Remember everyone who matters. A daily reconnect list and reminders, on your iPhone. Your contacts and notes stay on-device."
 SUPPORT_URL = "https://has-deploy.github.io/relationos/support"
 MARKETING_URL = "https://has-deploy.github.io/relationos"
 PRIVACY_URL = "https://has-deploy.github.io/relationos/privacy"
-WHATS_NEW = "Initial release. RelationOS keeps your relationships private — on your phone, not in the cloud."
+WHATS_NEW = "Import your iPhone contacts (pick a few or in bulk) or a vCard. Log a call, text, or email per person. Stability and reliability improvements."
 COPYRIGHT = "2026 Tony McMurtrey"
 APP_NAME = "RelationOS"
 SUBTITLE = "Personal CRM. On your phone."
@@ -197,24 +202,37 @@ def get_app_info_id():
 
 
 def get_version_id():
-    """Returns the editable appStoreVersion id."""
-    _, resp = REQ("GET", f"/v1/apps/{APP_ID}/appStoreVersions", params={"limit": 10})
+    """Returns the editable appStoreVersion id for TARGET_VERSION_STRING.
+
+    Prefer an editable version whose versionString matches TARGET_VERSION_STRING.
+    If none exists, create it. Older READY_FOR_SALE / on-sale versions are
+    left alone — we never edit a shipped version's metadata.
+    """
+    _, resp = REQ("GET", f"/v1/apps/{APP_ID}/appStoreVersions", params={"limit": 25})
     versions = resp.get("data", [])
     EDIT = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED",
-            "METADATA_REJECTED", "INVALID_BINARY"}
+            "METADATA_REJECTED", "INVALID_BINARY", "WAITING_FOR_REVIEW",
+            "IN_REVIEW", "DEVELOPER_ACTION_NEEDED"}
+    # Exact-target match first
+    for v in versions:
+        vs = v["attributes"].get("versionString")
+        st = v["attributes"]["appStoreState"]
+        if vs == TARGET_VERSION_STRING and st in EDIT:
+            return v["id"]
+    # Any editable as fallback
     for v in versions:
         if v["attributes"]["appStoreState"] in EDIT:
             return v["id"]
-    if versions:
-        return versions[0]["id"]
-    # Create one
+    # Need to create the target version
     _, resp = REQ("POST", "/v1/appStoreVersions", body={
         "data": {
             "type": "appStoreVersions",
-            "attributes": {"platform": "IOS", "versionString": "1.0"},
+            "attributes": {"platform": "IOS", "versionString": TARGET_VERSION_STRING},
             "relationships": {"app": {"data": {"type": "apps", "id": APP_ID}}},
         }
     })
+    if not isinstance(resp, dict) or "data" not in resp:
+        raise RuntimeError(f"appStoreVersion create failed: {resp}")
     return resp["data"]["id"]
 
 

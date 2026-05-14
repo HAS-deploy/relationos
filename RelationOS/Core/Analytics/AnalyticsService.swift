@@ -1,11 +1,15 @@
 import Foundation
 import SwiftUI
 
-/// Analytics is intentionally abstracted so a real provider could be wired
-/// in later without touching call sites. **RelationOS does not include any
-/// third-party analytics SDK** (privacy posture — see
-/// docs/apple-review-risk-profile.md §5/§7). The default impl logs to the
-/// console in DEBUG only and is a complete no-op in Release.
+/// In-app analytics façade. RelationOS DOES collect anonymous product
+/// analytics via PostHog — see `Core/Analytics/PortfolioAnalytics.swift`
+/// for the configured SDK (no `personProfiles`, no screen-views, no
+/// session replay, random per-install identifier). This protocol exists
+/// alongside that for legacy call sites that emit local
+/// `AnalyticsEvent`s; the default impl logs to the console in DEBUG
+/// only and is a no-op in Release. App Privacy disclosure of the
+/// PostHog data is in `RelationOS/Resources/PrivacyInfo.xcprivacy`
+/// and `docs/apple-review-risk-profile.md` §5/§7.
 enum AnalyticsEvent: String {
     case contactAdded = "contact_added"
     case reminderEnabled = "reminder_enabled"

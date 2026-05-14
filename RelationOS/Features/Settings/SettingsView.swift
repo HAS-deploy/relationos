@@ -117,7 +117,7 @@ struct SettingsView: View {
         } header: {
             Text("Privacy")
         } footer: {
-            Text("Removes every contact, note, tag, and reminder stored on this device. Required for App Store guideline 5.1.1(v).")
+            Text("Removes every contact, note, tag, reminder, and logged interaction stored on this device. This action cannot be undone.")
         }
     }
 
@@ -129,7 +129,7 @@ struct SettingsView: View {
         } header: {
             Text("About")
         } footer: {
-            Text("RelationOS is a private, on-device personal CRM. Your data stays on your iPhone. Cloud sync is on the v1.1 roadmap.")
+            Text("RelationOS keeps your contacts, notes, and reminders on your iPhone. Cross-device sync is on the roadmap and off by default.")
         }
     }
 
