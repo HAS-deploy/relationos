@@ -13,6 +13,7 @@ struct ContactRow: View {
                     .font(.subheadline.bold())
                     .foregroundStyle(Theme.accent)
             }
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(contact.name).font(.body)
                 Text(lastTouchedLabel)
@@ -22,6 +23,8 @@ struct ContactRow: View {
             Spacer()
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(contact.name), \(lastTouchedLabel)")
     }
 
     private var lastTouchedLabel: String {

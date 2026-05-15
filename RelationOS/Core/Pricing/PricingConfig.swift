@@ -19,10 +19,16 @@ enum PricingConfig {
     /// the "X days of Pro free remaining" banner that runs separately.
     static let paywallSubtitle = "Unlimited contacts and daily reconnect. Cancel anytime."
 
+    // NOTE: "Cooling relationships highlighted" was previously listed as a
+    // distinct bullet but is the same `lastInteractedAt`-based heuristic
+    // that powers Daily Reconnect — same sort, no separate UI surface.
+    // Selling them as two features risked a 2.3.1 accuracy ding. The
+    // Daily Reconnect bullet now folds the cooling-prioritization promise
+    // into a single line. App Store description must mirror this — see
+    // SHIP_NOTES.md.
     static let paywallBenefits: [String] = [
         "Unlimited contacts",
-        "Daily reconnect list — 5 people every morning",
-        "Cooling relationships highlighted",
+        "Daily reconnect list — 5 people every morning, ordered by who's gone coldest",
         "Daily reconnect widget shows your Pro list",
     ]
 

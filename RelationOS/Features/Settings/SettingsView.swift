@@ -12,6 +12,24 @@ struct SettingsView: View {
     @State private var confirmingDelete = false
     @State private var didDeleteTrigger = 0
 
+    // Analytics opt-out is persisted by PortfolioAnalytics under the
+    // shared portfolio key. We mirror it via @AppStorage so the toggle
+    // reflects/writes the same UserDefaults bit the SDK reads.
+    @AppStorage("portfolio.analytics.opted_out") private var analyticsOptedOut: Bool = false
+    private var analyticsEnabled: Binding<Bool> {
+        Binding(
+            get: { !analyticsOptedOut },
+            set: { newValue in
+                analyticsOptedOut = !newValue
+                if newValue {
+                    PortfolioAnalytics.shared.optIn()
+                } else {
+                    PortfolioAnalytics.shared.optOut()
+                }
+            }
+        )
+    }
+
     // DEBUG-only: a launch argument `RELATIONOS_SCREENSHOT_PAYWALL=1`
     // (env var or `-RELATIONOS_SCREENSHOT_PAYWALL 1`) auto-opens the
     // paywall on Settings appear. Used by the screenshot harness.
@@ -113,7 +131,7 @@ struct SettingsView: View {
             } else if purchases.isInIntroTrial {
                 Text("Your 14-day Pro trial started on first launch — no card, no commitment. After it ends, RelationOS reverts to the free tier (up to \(PricingConfig.freeContactCap) contacts) unless you subscribe.")
             } else {
-                Text("Free tier: up to \(PricingConfig.freeContactCap) contacts. Pro unlocks unlimited contacts, the Daily Reconnect list (5 people every morning), and cooling-relationships highlighting in that view.")
+                Text("Free tier: up to \(PricingConfig.freeContactCap) contacts. Pro unlocks unlimited contacts and the Daily Reconnect list (5 people every morning, ordered by who's gone coldest).")
             }
         }
     }
@@ -188,6 +206,8 @@ struct SettingsView: View {
 
     private var privacySection: some View {
         Section {
+            Toggle("Anonymous Usage Analytics", isOn: analyticsEnabled)
+                .accessibilityHint("Send anonymous, non-identifying product usage events to help improve RelationOS.")
             Button(role: .destructive) {
                 confirmingDelete = true
             } label: {
@@ -196,7 +216,7 @@ struct SettingsView: View {
         } header: {
             Text("Privacy")
         } footer: {
-            Text("Removes every contact, note, tag, reminder, and logged interaction stored on this device. This action cannot be undone.")
+            Text("Anonymous analytics are tied to a random per-install ID — never to your name, email, contacts, or notes. Turn off any time. Delete all data removes every contact, note, tag, reminder, and logged interaction stored on this device. This action cannot be undone.")
         }
     }
 

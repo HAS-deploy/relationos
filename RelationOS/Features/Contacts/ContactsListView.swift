@@ -20,6 +20,7 @@ struct ContactsListView: View {
     @State private var showBulkImport: Bool = false
     @State private var showVCardPicker: Bool = false
     @State private var importBanner: ImportBanner?
+    @State private var contactAddedTrigger: Int = 0
 
     private struct ImportBanner: Identifiable {
         let id = UUID()
@@ -87,6 +88,7 @@ struct ContactsListView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Add or import contacts")
             }
         }
         .sheet(isPresented: $showAddSheet) { addContactSheet }
@@ -121,6 +123,7 @@ struct ContactsListView: View {
                 handleVCardFiles(.success([url]))
             }
         }
+        .hapticSuccess(trigger: contactAddedTrigger)
     }
 
     private var emptyState: some View {
@@ -200,6 +203,7 @@ struct ContactsListView: View {
                             source: .manual
                         ))
                         analytics.track(.contactAdded)
+                        contactAddedTrigger &+= 1
                         resetAddSheetFields()
                         showAddSheet = false
                     }
@@ -284,5 +288,8 @@ struct ContactsListView: View {
             "inserted": String(inserted),
             "merged": String(merged),
         ])
+        if inserted > 0 || merged > 0 {
+            contactAddedTrigger &+= 1
+        }
     }
 }
