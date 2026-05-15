@@ -21,6 +21,7 @@ struct ContactDetailView: View {
     var body: some View {
         Form {
             contactInfoSection
+            ContactEmailsSection(contact: workingContact)
             notesSection
             tagsSection
             interactionSection

@@ -5,6 +5,7 @@ struct RelationOSApp: App {
     @StateObject private var purchases = PurchaseManager()
     @StateObject private var settings = SettingsStore()
     @StateObject private var contacts = ContactsStore()
+    @StateObject private var mail = MailCoordinator()
     // NOTE: CallObserver is intentionally NOT instantiated at launch.
     // CXCallObserver registers a system-wide audio/call delegate, which a
     // contacts app shouldn't hold without a visible reason. The
@@ -31,6 +32,7 @@ struct RelationOSApp: App {
                 .environmentObject(purchases)
                 .environmentObject(settings)
                 .environmentObject(contacts)
+                .environmentObject(mail)
                 .environment(\.analytics, analytics)
                 .environment(\.reminders, reminders)
                 .task { await purchases.start() }

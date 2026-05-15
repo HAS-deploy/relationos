@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var purchases: PurchaseManager
     @EnvironmentObject var contacts: ContactsStore
+    @EnvironmentObject var mail: MailCoordinator
     @Environment(\.analytics) private var analytics
 
     @State private var showPaywall = false
@@ -24,6 +26,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             premiumSection
+            mailSection
             displaySection
             privacySection
             aboutSection
@@ -113,6 +116,64 @@ struct SettingsView: View {
                 Text("Free tier: up to \(PricingConfig.freeContactCap) contacts. Pro unlocks unlimited contacts, the Daily Reconnect list (5 people every morning), and cooling-relationships highlighting in that view.")
             }
         }
+    }
+
+    @ViewBuilder
+    private var mailSection: some View {
+        if MicrosoftMailAuth.isConfigured {
+            Section {
+                if MicrosoftMailAuth.isConnected {
+                    Label("Outlook connected", systemImage: "checkmark.seal.fill")
+                        .foregroundStyle(Theme.accent)
+                    Button(role: .destructive) {
+                        mail.disconnect()
+                    } label: {
+                        Label("Disconnect Outlook", systemImage: "link.badge.minus")
+                    }
+                } else {
+                    Button {
+                        Task { await connectOutlook() }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Label("Connect Outlook", systemImage: "envelope.badge")
+                                .font(.headline)
+                            Text("Pull recent emails per contact and summarize on-device.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                if let last = mail.store.lastSyncAt {
+                    Text("Last synced \(last, style: .relative) ago")
+                        .font(.caption2).foregroundStyle(.tertiary)
+                }
+                if let err = mail.store.lastSyncError {
+                    Text(err).font(.caption).foregroundStyle(.red)
+                }
+            } header: {
+                Text("Email")
+            } footer: {
+                Text("Emails are stored only on your device. On-device summarization runs through Apple Intelligence (iOS 26 on eligible iPhones / iPads); older devices fall back to a subject list.")
+            }
+        }
+    }
+
+    private func connectOutlook() async {
+        do {
+            let anchor = currentWindow()
+            try await MicrosoftMailAuth.shared.connect(anchor: anchor)
+        } catch MicrosoftMailAuth.AuthError.userCancelled {
+            return
+        } catch {
+            print("[mail] connect failed: \(error)")
+        }
+    }
+
+    @MainActor
+    private func currentWindow() -> UIWindow {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow } ?? UIWindow()
     }
 
     private var displaySection: some View {
