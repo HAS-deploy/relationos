@@ -10,6 +10,17 @@ struct SettingsView: View {
     @State private var confirmingDelete = false
     @State private var didDeleteTrigger = 0
 
+    // DEBUG-only: a launch argument `RELATIONOS_SCREENSHOT_PAYWALL=1`
+    // (env var or `-RELATIONOS_SCREENSHOT_PAYWALL 1`) auto-opens the
+    // paywall on Settings appear. Used by the screenshot harness.
+    // Stripped from Release builds via #if DEBUG.
+    #if DEBUG
+    private var shouldAutoShowPaywall: Bool {
+        ProcessInfo.processInfo.environment["RELATIONOS_SCREENSHOT_PAYWALL"] == "1"
+            || ProcessInfo.processInfo.arguments.contains("-RELATIONOS_SCREENSHOT_PAYWALL")
+    }
+    #endif
+
     var body: some View {
         Form {
             premiumSection
@@ -17,10 +28,17 @@ struct SettingsView: View {
             privacySection
             aboutSection
             #if DEBUG
-            debugSection
+            if ProcessInfo.processInfo.environment["RELATIONOS_HIDE_DEBUG_SECTION"] != "1" {
+                debugSection
+            }
             #endif
         }
         .navigationTitle("Settings")
+        #if DEBUG
+        .onAppear {
+            if shouldAutoShowPaywall { showPaywall = true }
+        }
+        #endif
         .sheet(isPresented: $showPaywall) {
             PaywallView(triggeringFeature: .unlimitedContacts)
                 .environmentObject(purchases)
