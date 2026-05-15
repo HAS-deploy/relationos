@@ -74,6 +74,8 @@ targets:
             LSHandlerRank: Alternate
             LSItemContentTypes:
               - public.vcard
+        # Required when CFBundleDocumentTypes is set (altool warning 90737).
+        LSSupportsOpeningDocumentsInPlace: true
         # OAuth (Google People + Microsoft Graph). Values intentionally
         # blank — fill these before shipping OAuth imports. The matching
         # CFBundleURLTypes scheme must also be updated. The menu items
@@ -96,7 +98,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         MARKETING_VERSION: "1.1"
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -133,7 +135,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.relationos.app.widgets
         TARGETED_DEVICE_FAMILY: "1,2"
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         MARKETING_VERSION: "1.1"
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES

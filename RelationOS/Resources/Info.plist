@@ -59,6 +59,11 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Required pair when CFBundleDocumentTypes is declared (Apple
+	     altool warning 90737). VCardImporter reads the file in place
+	     into ContactsStore — YES is the correct answer. -->
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 
 	<!-- OAuth import (Google People + Microsoft Graph). LEFT BLANK
 	     on purpose — populate when ready and the menu items will
