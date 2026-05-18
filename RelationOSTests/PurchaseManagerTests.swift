@@ -58,14 +58,14 @@ final class PurchaseManagerTests: XCTestCase {
 
     // MARK: - Install trial path
 
-    func testFreshInstallGrantsTrialAndProForFourteenDays() {
+    func testFreshInstallGrantsTrialAndProForSevenDays() {
         // No clock injection: PurchaseManager stamps installAt to "now"
-        // and the user should immediately be Pro for the next 14 days.
+        // and the user should immediately be Pro for the next 7 days.
         let pm = PurchaseManager()
         XCTAssertTrue(pm.isPremium, "Fresh install should land in the trial as Pro")
         XCTAssertTrue(pm.isInIntroTrial)
         XCTAssertFalse(pm.hasActiveSubscription)
-        XCTAssertEqual(pm.introTrialDaysRemaining, 14)
+        XCTAssertEqual(pm.introTrialDaysRemaining, 7)
 
         // Widget reads the composite from the App Group on first launch —
         // verify the stamp landed.
@@ -88,8 +88,8 @@ final class PurchaseManagerTests: XCTestCase {
     #if DEBUG
     func testDebugRewindMovesUserCloserToTrialExpiry() {
         let pm = PurchaseManager()
-        XCTAssertEqual(pm.introTrialDaysRemaining, 14)
-        pm.debugRewindTrial(daysIn: 13)
+        XCTAssertEqual(pm.introTrialDaysRemaining, 7)
+        pm.debugRewindTrial(daysIn: 6)
         XCTAssertEqual(pm.introTrialDaysRemaining, 1)
         XCTAssertTrue(pm.isInIntroTrial)
         XCTAssertTrue(pm.isPremium)

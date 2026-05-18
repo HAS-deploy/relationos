@@ -103,7 +103,7 @@ final class PaywallDisclosureTests: XCTestCase {
     }
 
     func testPaywallSourceSurfacesInstallTrialBanner() throws {
-        // 2026-05-14: The 14-day trial is granted at install (see
+        // 2026-05-14: The 7-day trial is granted at install (see
         // IntroTrialClock), not by tapping a subscription plan. The paywall
         // surfaces it through a conditional banner gated on
         // `purchases.isInIntroTrial`, with a per-plan microcopy line that
