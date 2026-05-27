@@ -1,11 +1,11 @@
 import Foundation
 
-/// 7-day-from-install Pro grant.
+/// 14-day-from-install Pro grant.
 ///
 /// As of 2026-05-14 RelationOS switched off Apple's introductory-offer
-/// model (which gates the 7 days behind a subscription tap) and replaced
+/// model (which gates the 14 days behind a subscription tap) and replaced
 /// it with an install-time grant: every fresh install gets full Pro for
-/// 7 days, no card, no commitment, no paywall. After day 7 the user
+/// 14 days, no card, no commitment, no paywall. After day 14 the user
 /// falls back to the free tier and the paywall starts gating Pro-only
 /// surfaces normally.
 ///
@@ -24,7 +24,7 @@ import Foundation
 /// switch to StoreKit's `Transaction.deviceVerification` UUID, but for
 /// v1.1 the simpler local stamp is enough.
 struct IntroTrialClock {
-    static let length: TimeInterval = 7 * 24 * 60 * 60      // 7 days
+    static let length: TimeInterval = 14 * 24 * 60 * 60     // 14 days
     private static let installAtKey = "relationos.intro_trial.install_at"
     private static let consumedKey  = "relationos.intro_trial.consumed"
 
@@ -49,7 +49,7 @@ struct IntroTrialClock {
         defaults.object(forKey: Self.installAtKey) as? Date
     }
 
-    /// True iff the device is inside its 7-day install window AND the
+    /// True iff the device is inside its 14-day install window AND the
     /// trial hasn't been consumed (either by a paid purchase landing or
     /// by the debug toggle).
     func isWithinTrial(now: Date = Date()) -> Bool {
@@ -58,7 +58,7 @@ struct IntroTrialClock {
         return now.timeIntervalSince(installAt) < Self.length
     }
 
-    /// Rounded-up days remaining (so a fresh install shows "7 days left",
+    /// Rounded-up days remaining (so a fresh install shows "14 days left",
     /// not "6 days, 23 hours"). Zero when the trial is over.
     func daysRemaining(now: Date = Date()) -> Int {
         guard isWithinTrial(now: now), let installAt = installAt else { return 0 }

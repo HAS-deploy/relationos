@@ -129,7 +129,7 @@ struct SettingsView: View {
             if purchases.hasActiveSubscription {
                 Text("Manage subscription in iOS Settings → your Apple ID → Subscriptions.")
             } else if purchases.isInIntroTrial {
-                Text("Your 7-day Pro trial started on first launch — no card, no commitment. After it ends, RelationOS reverts to the free tier (up to \(PricingConfig.freeContactCap) contacts) unless you subscribe.")
+                Text("Your 14-day Pro trial started on first launch — no card, no commitment. After it ends, RelationOS reverts to the free tier (up to \(PricingConfig.freeContactCap) contacts) unless you subscribe.")
             } else {
                 Text("Free tier: up to \(PricingConfig.freeContactCap) contacts. Pro unlocks unlimited contacts and the Daily Reconnect list (5 people every morning, ordered by who's gone coldest).")
             }
@@ -240,7 +240,7 @@ struct SettingsView: View {
             }
             Button("Rewind trial to day 13") { purchases.debugRewindTrial(daysIn: 13) }
             Button("Force trial expired") { purchases.debugForceTrialExpired() }
-            Button("Reset trial (re-grant 7 days)") { purchases.debugResetTrial() }
+            Button("Reset trial (re-grant 14 days)") { purchases.debugResetTrial() }
             Text("isPremium=\(purchases.isPremium ? "Y" : "N")  sub=\(purchases.hasActiveSubscription ? "Y" : "N")  trial=\(purchases.isInIntroTrial ? "Y(\(purchases.introTrialDaysRemaining)d)" : "N")")
                 .font(.caption).foregroundStyle(.secondary)
             Text("Contacts on file: \(contacts.contacts.count)")

@@ -60,7 +60,7 @@ final class PurchaseManagerTests: XCTestCase {
 
     func testFreshInstallGrantsTrialAndProForSevenDays() {
         // No clock injection: PurchaseManager stamps installAt to "now"
-        // and the user should immediately be Pro for the next 7 days.
+        // and the user should immediately be Pro for the next 14 days.
         let pm = PurchaseManager()
         XCTAssertTrue(pm.isPremium, "Fresh install should land in the trial as Pro")
         XCTAssertTrue(pm.isInIntroTrial)

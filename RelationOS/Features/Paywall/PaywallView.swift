@@ -145,7 +145,7 @@ struct PaywallView: View {
     }
 
     /// In-trial: "Starts when your trial ends". Post-trial: just the
-    /// per-period billing reminder. The 7-day free chunk is the install
+    /// per-period billing reminder. The 14-day free chunk is the install
     /// grant, never the subscription's introductoryOffer — so no trial
     /// microcopy on the cards.
     private func planMicrocopy(annual: Bool) -> String {

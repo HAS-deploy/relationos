@@ -4,7 +4,7 @@ import StoreKit
 @MainActor
 final class PurchaseManager: ObservableObject {
     /// "Has Pro entitlement right now" — true for paid subscribers AND for
-    /// users still inside the 7-day install trial. Single source of truth
+    /// users still inside the 14-day install trial. Single source of truth
     /// for all UI gates.
     @Published private(set) var isPremium: Bool = false
     /// True only when isPremium is granted because of the install-trial
@@ -235,7 +235,7 @@ final class PurchaseManager: ObservableObject {
     ///
     /// When a paid purchase lands (`value == true`) we also consume the
     /// install-trial so the user can't double-dip: install-trial + paid
-    /// sub stacking would let them ride the 7-day grant on top of a
+    /// sub stacking would let them ride the 14-day grant on top of a
     /// running subscription. Per policy (2026-05-18) paid users go
     /// straight to paid Pro.
     private func setSubscribed(_ value: Bool) {
