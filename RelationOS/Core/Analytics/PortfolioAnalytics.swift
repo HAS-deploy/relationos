@@ -197,6 +197,7 @@ enum PurchaseFailureReason: String {
     case pending
     case noPaymentMethod = "no_payment_method"
     case notInStorefront = "not_in_storefront"
+    case productUnavailable = "product_unavailable"
     case networkError = "network_error"
     case verificationFailed = "verification_failed"
     case unverifiedReceipt = "unverified_receipt"
@@ -217,7 +218,7 @@ enum PurchaseFailureReason: String {
         }
         if let purchaseErr = error as? Product.PurchaseError {
             switch purchaseErr {
-            case .productUnavailable: self = .notInStorefront; return
+            case .productUnavailable: self = .productUnavailable; return
             case .invalidQuantity, .invalidOfferIdentifier, .invalidOfferPrice, .invalidOfferSignature:
                 self = .verificationFailed; return
             case .missingOfferParameters, .ineligibleForOffer:

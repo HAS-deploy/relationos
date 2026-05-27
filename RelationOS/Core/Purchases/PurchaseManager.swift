@@ -102,6 +102,7 @@ final class PurchaseManager: ObservableObject {
     func purchaseMonthly() async {
         guard let product = proMonthlyProduct else {
             self.lastError = "Product unavailable. Try again in a moment."
+            PortfolioAnalytics.shared.trackPaywallFailure(productId: PricingConfig.proMonthlyProductID, reason: .productUnavailable)
             return
         }
         await purchase(product)
@@ -110,6 +111,7 @@ final class PurchaseManager: ObservableObject {
     func purchaseAnnual() async {
         guard let product = proAnnualProduct else {
             self.lastError = "Product unavailable. Try again in a moment."
+            PortfolioAnalytics.shared.trackPaywallFailure(productId: PricingConfig.proAnnualProductID, reason: .productUnavailable)
             return
         }
         await purchase(product)
