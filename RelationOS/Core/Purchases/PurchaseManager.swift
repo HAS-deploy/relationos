@@ -138,7 +138,7 @@ final class PurchaseManager: ObservableObject {
             setSubscribed(true)
             await transaction.finish()
         case .userCancelled:
-            lastFailureReason = "user_cancelled"
+            lastFailureReason = "user_canceled"
             PortfolioAnalytics.shared.trackPaywallFailure(productId: product.id, reason: .userCanceled)
         case .pending:
             self.lastError = "Purchase is pending approval."
