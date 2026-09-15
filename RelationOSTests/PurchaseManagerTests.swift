@@ -60,16 +60,30 @@ final class PurchaseManagerTests: XCTestCase {
 
     func testFreshInstallGrantsTrialAndProForFourteenDays() {
         // No clock injection: PurchaseManager stamps installAt to "now"
-        // and the user should immediately be Pro for the next 14 days.
+        // and the user should immediately be Pro for installTrialDays.
         let pm = PurchaseManager()
         XCTAssertTrue(pm.isPremium, "Fresh install should land in the trial as Pro")
         XCTAssertTrue(pm.isInIntroTrial)
         XCTAssertFalse(pm.hasActiveSubscription)
-        XCTAssertEqual(pm.introTrialDaysRemaining, 14)
+        XCTAssertEqual(pm.introTrialDaysRemaining, PricingConfig.installTrialDays)
 
         // Widget reads the composite from the App Group on first launch —
         // verify the stamp landed.
         XCTAssertTrue(sharedDefaults.bool(forKey: premiumKey))
+    }
+
+    func testTrialExpiresOnceInstallTrialDaysElapse() {
+        let clock = IntroTrialClock(defaults: sharedDefaults)
+        let install = Date()
+        clock.recordInstallIfNeeded(now: install)
+
+        let stillInside = install.addingTimeInterval(IntroTrialClock.length - 1)
+        XCTAssertTrue(clock.isWithinTrial(now: stillInside))
+        XCTAssertEqual(clock.daysRemaining(now: stillInside), 1)
+
+        let justExpired = install.addingTimeInterval(IntroTrialClock.length)
+        XCTAssertFalse(clock.isWithinTrial(now: justExpired))
+        XCTAssertEqual(clock.daysRemaining(now: justExpired), 0)
     }
 
     func testRelaunchPreservesInstallStamp() {
@@ -88,8 +102,8 @@ final class PurchaseManagerTests: XCTestCase {
     #if DEBUG
     func testDebugRewindMovesUserCloserToTrialExpiry() {
         let pm = PurchaseManager()
-        XCTAssertEqual(pm.introTrialDaysRemaining, 14)
-        pm.debugRewindTrial(daysIn: 13)
+        XCTAssertEqual(pm.introTrialDaysRemaining, PricingConfig.installTrialDays)
+        pm.debugRewindTrial(daysIn: PricingConfig.installTrialDays - 1)
         XCTAssertEqual(pm.introTrialDaysRemaining, 1)
         XCTAssertTrue(pm.isInIntroTrial)
         XCTAssertTrue(pm.isPremium)
