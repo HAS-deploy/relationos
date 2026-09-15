@@ -27,6 +27,10 @@ final class PricingConfigTests: XCTestCase {
         XCTAssertEqual(PricingConfig.freeContactCap, 100)
     }
 
+    func testInstallTrialDaysMatchesPortfolioPolicy() {
+        XCTAssertEqual(PricingConfig.installTrialDays, 14)
+    }
+
     func testPaywallTitleAndSubtitleMatchSpec() {
         // 2026-05-14: Trial model changed from "free trial on subscribe"
         // to "Pro free for 14 days from install" (see IntroTrialClock).

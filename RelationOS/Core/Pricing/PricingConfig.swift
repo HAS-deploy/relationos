@@ -35,6 +35,11 @@ enum PricingConfig {
     // Free-tier caps.
     static let freeContactCap = 100
 
+    /// Install-time Pro grant length. Portfolio SoT is 14 days (same
+    /// HydroLite/RackTimer policy). `IntroTrialClock.length` is derived
+    /// from this — do not re-hardcode the number in product or tests.
+    static let installTrialDays: Int = 14
+
     // Marketing URLs (also referenced from PaywallView for legal links).
     // Hosted on GitHub Pages (HAS-deploy/relationos, /docs on main).
     static let privacyPolicyURL = URL(string: "https://has-deploy.github.io/relationos/privacy")!
