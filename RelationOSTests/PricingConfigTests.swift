@@ -37,16 +37,17 @@ final class PricingConfigTests: XCTestCase {
     }
 
     func testPaywallBenefitsMatchTrimmedV1Scope() {
-        // v1 trim (2026-05-07): AI meeting notes / semantic search / smart
-        // reminders / decay detection are deferred to v1.1 and not
-        // advertised here. Benefits must match what the StoreKit
-        // subscription descriptions advertise so audits stay consistent.
-        XCTAssertEqual(PricingConfig.paywallBenefits.count, 4)
+        // Benefits SoT is PricingConfig.paywallBenefits (cooling folded into
+        // the Daily Reconnect line — no separate "Cooling relationships"
+        // bullet). Count stays at 3.
+        XCTAssertEqual(PricingConfig.paywallBenefits.count, 3)
         XCTAssertTrue(PricingConfig.paywallBenefits.contains("Unlimited contacts"))
-        XCTAssertTrue(PricingConfig.paywallBenefits.contains("Daily reconnect list — 5 people every morning"))
-        XCTAssertTrue(PricingConfig.paywallBenefits.contains("Cooling relationships highlighted"))
+        XCTAssertTrue(PricingConfig.paywallBenefits.contains(
+            "Daily reconnect list — 5 people every morning, ordered by who's gone coldest"
+        ))
         XCTAssertTrue(PricingConfig.paywallBenefits.contains("Daily reconnect widget shows your Pro list"))
-        // Negative checks: removed claims must not creep back in.
+        // Negative checks: removed / deferred claims must not creep back in.
+        XCTAssertFalse(PricingConfig.paywallBenefits.contains("Cooling relationships highlighted"))
         XCTAssertFalse(PricingConfig.paywallBenefits.contains("Smart reminders"))
         XCTAssertFalse(PricingConfig.paywallBenefits.contains("Decay detection"))
         XCTAssertFalse(PricingConfig.paywallBenefits.contains("Semantic search"))

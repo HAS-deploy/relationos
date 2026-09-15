@@ -95,3 +95,10 @@ Units that need an iOS host (`xcodebuild test -scheme RelationOS`) were not exec
 - Inventing a new PostHog project key
 - Cloud / training / off-device LLM
 - SwiftData migration
+
+## Builder Mac verify 2026-09-15
+
+- Worktree: `/Users/tony/Developer/builder-relationos-pr2-20260915` @ PR #2 head
+- Fixed stale `PricingConfigTests.testPaywallBenefitsMatchTrimmedV1Scope` (expected 4 bullets incl. separate cooling; SoT is 3 with cooling folded into Daily Reconnect line)
+- Re-run: `xcodebuild test -scheme RelationOS -only-testing:RelationOSTests` → see follow-up log
+- **No ASC submit**
