@@ -58,14 +58,15 @@ final class PurchaseManagerTests: XCTestCase {
 
     // MARK: - Install trial path
 
-    func testFreshInstallGrantsTrialAndProForSevenDays() {
+    func testFreshInstallGrantsTrialAndProForFourteenDays() {
         // No clock injection: PurchaseManager stamps installAt to "now"
         // and the user should immediately be Pro for the next 14 days.
         let pm = PurchaseManager()
         XCTAssertTrue(pm.isPremium, "Fresh install should land in the trial as Pro")
         XCTAssertTrue(pm.isInIntroTrial)
         XCTAssertFalse(pm.hasActiveSubscription)
-        XCTAssertEqual(pm.introTrialDaysRemaining, 7)
+        XCTAssertEqual(pm.introTrialDaysRemaining, 14)
+        XCTAssertEqual(IntroTrialClock.length, 14 * 24 * 60 * 60)
 
         // Widget reads the composite from the App Group on first launch —
         // verify the stamp landed.
@@ -88,8 +89,8 @@ final class PurchaseManagerTests: XCTestCase {
     #if DEBUG
     func testDebugRewindMovesUserCloserToTrialExpiry() {
         let pm = PurchaseManager()
-        XCTAssertEqual(pm.introTrialDaysRemaining, 7)
-        pm.debugRewindTrial(daysIn: 6)
+        XCTAssertEqual(pm.introTrialDaysRemaining, 14)
+        pm.debugRewindTrial(daysIn: 13)
         XCTAssertEqual(pm.introTrialDaysRemaining, 1)
         XCTAssertTrue(pm.isInIntroTrial)
         XCTAssertTrue(pm.isPremium)
@@ -101,6 +102,17 @@ final class PurchaseManagerTests: XCTestCase {
         pm.debugForceTrialExpired()
         XCTAssertFalse(pm.isInIntroTrial)
         XCTAssertFalse(pm.isPremium)
+    }
+
+    func testPaidPurchaseConsumesInstallTrial() {
+        let pm = PurchaseManager()
+        XCTAssertTrue(pm.isInIntroTrial)
+        XCTAssertEqual(pm.introTrialDaysRemaining, 14)
+        pm.debugSetPremium(true)
+        XCTAssertTrue(pm.hasActiveSubscription)
+        XCTAssertTrue(pm.isPremium)
+        XCTAssertFalse(pm.isInIntroTrial, "Paid purchase must consume the install trial")
+        XCTAssertEqual(pm.introTrialDaysRemaining, 0)
     }
 
     func testDebugToggleFlipsOnlyTheSubscriptionBit() {

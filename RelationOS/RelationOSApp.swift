@@ -40,7 +40,11 @@ struct RelationOSApp: App {
                     // Tick the install-trial day counter when the user
                     // returns from background, so the banner crosses midnight
                     // correctly without a full relaunch.
-                    if phase == .active { purchases.refreshTrialState() }
+                    if phase == .active {
+                        purchases.refreshTrialState()
+                        purchases.syncAnalyticsEntitlement()
+                        PortfolioAnalytics.shared.track(PortfolioEvent.appForegrounded)
+                    }
                 }
                 .preferredColorScheme(settings.forcedColorScheme)
         }

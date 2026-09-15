@@ -8,16 +8,29 @@
     <array/>
 
     <!-- PostHog is wired in via PortfolioAnalytics.swift with
-         personProfiles=.never, captureScreenViews=false,
-         captureApplicationLifecycleEvents=false, sessionReplay=false.
+         personProfiles=.never, captureScreenViews=false (we emit
+         explicit screen.viewed), captureApplicationLifecycleEvents=false
+         (we emit install + app.foregrounded), sessionReplay=false.
          The data that leaves the device is anonymous product-interaction
-         events (paywall.viewed, paywall.purchase_clicked, etc.) tagged
-         with a random per-install identifier — no name, email, phone,
+         events plus a random per-install User ID — no name, email, phone,
          contact data, or device IDFA. Listed below to match the App
          Privacy nutrition answers in docs/app-privacy-answers.md.
-         Crash data is iOS-supplied (MetricKit) and rolled in. -->
+         Crash / performance / other diagnostic data is iOS-supplied
+         (MetricKit) plus PostHog SDK envelope metadata. -->
     <key>NSPrivacyCollectedDataTypes</key>
     <array>
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeUserID</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+            </array>
+        </dict>
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypeProductInteraction</string>

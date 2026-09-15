@@ -55,11 +55,11 @@ struct SettingsView: View {
             #endif
         }
         .navigationTitle("Settings")
-        #if DEBUG
         .onAppear {
+            #if DEBUG
             if shouldAutoShowPaywall { showPaywall = true }
+            #endif
         }
-        #endif
         .sheet(isPresented: $showPaywall) {
             PaywallView(triggeringFeature: .unlimitedContacts)
                 .environmentObject(purchases)

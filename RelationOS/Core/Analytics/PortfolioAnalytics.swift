@@ -56,11 +56,13 @@ final class PortfolioAnalytics: @unchecked Sendable {
         self.appName = appName
 
         let defaults = UserDefaults.standard
+        var isFirstLaunch = false
         if let stored = defaults.object(forKey: Self.kFirstLaunch) as? Date {
             firstLaunchAt = stored
         } else {
             firstLaunchAt = Date()
             defaults.set(firstLaunchAt, forKey: Self.kFirstLaunch)
+            isFirstLaunch = true
         }
 
         guard !isOptedOut else {
@@ -86,6 +88,21 @@ final class PortfolioAnalytics: @unchecked Sendable {
         #endif
 
         started = true
+
+        // Autocapture is off (`captureApplicationLifecycleEvents = false`,
+        // `captureScreenViews = false`). We emit our own first-wire events
+        // so PostHog is not a dead link after `start()`.
+        if isFirstLaunch {
+            track(PortfolioEvent.install)
+        }
+        track(PortfolioEvent.appForegrounded)
+    }
+
+    /// Explicit `screen.viewed` — SDK screen autocapture stays off.
+    func trackScreen(_ name: String, extras: [String: Any] = [:]) {
+        var props = extras
+        props["screen"] = name
+        track(PortfolioEvent.screenViewed, props)
     }
 
     // MARK: Identity
@@ -238,6 +255,7 @@ enum PurchaseFailureReason: String {
 enum PortfolioEvent {
     static let install                 = "install"
     static let appForegrounded         = "app.foregrounded"
+    static let screenViewed            = "screen.viewed"
     static let paywallViewed           = "paywall.viewed"
     static let paywallPurchaseClick    = "paywall.purchase_clicked"
     static let paywallPurchaseSuccess  = "paywall.purchase_success"

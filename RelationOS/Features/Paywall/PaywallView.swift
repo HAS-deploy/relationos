@@ -69,6 +69,9 @@ struct PaywallView: View {
         }
         .onAppear {
             analytics.track(.paywallViewed, properties: ["feature": triggeringFeature.rawValue])
+            PortfolioAnalytics.shared.trackScreen("paywall", extras: [
+                "source": triggeringFeature.rawValue,
+            ])
             PortfolioAnalytics.shared.track(PortfolioEvent.paywallViewed, [
                 "source": triggeringFeature.rawValue,
             ])

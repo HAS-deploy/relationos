@@ -1,4 +1,12 @@
-# SHIP_NOTES_TRIAL — install-trial standardization (2026-05-18)
+# SHIP_NOTES_TRIAL — install-trial standardization
+
+> **2026-09-15 SoT:** RelationOS is back on a **14-day** install trial
+> (`IntroTrialClock.length = 14 * 24 * 60 * 60`). The 7-day pass below
+> was a portfolio-standardization experiment; v1.1.3 restores 14 days
+> end-to-end (clock, settings/paywall copy, unit tests). Consume-on-paid
+> stays.
+
+# Historical note — 2026-05-18 7-day pass
 
 Standardized RelationOS's install-trial to match the portfolio-wide pattern
 defined in `/Users/tony/Documents/portfolio-audit/INSTALL_TRIAL_SPEC.md`.

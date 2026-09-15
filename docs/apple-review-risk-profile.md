@@ -9,7 +9,7 @@
 - **Bundle ID:** com.relationos.app
 - **ASC App ID:** (set after Stage 5)
 - **Profile created:** 2026-05-07
-- **Last updated:** 2026-05-07
+- **Last updated:** 2026-09-15
 - **Primary owner:** Tony McMurtrey
 
 ---
@@ -94,7 +94,7 @@ without lying, stop and trace it from the code before continuing.
 | Crash logs | Apple MetricKit (on-device aggregation) + PostHog crash data for diagnostics | On-device + PostHog | Apple + PostHog | No | No |
 
 Nutrition label target (what Stage 8 will click through in ASC → App Privacy):
-**"Product Interaction"**, **"Crash Data"**, **"Performance Data"**, **"Other Diagnostic Data"** all marked Collected, Linked-to-User=No, Used-for-Tracking=No, purposes={Analytics, App Functionality}. Matches `RelationOS/Resources/PrivacyInfo.xcprivacy` and `docs/app-privacy-answers.md`. StoreKit purchases are excluded (framework-mediated). Cross-device sync is on the roadmap and is off by default.
+**"User ID"** (random per-install identifier), **"Product Interaction"**, **"Crash Data"**, **"Performance Data"**, **"Other Diagnostic Data"** all marked Collected, Linked-to-User=No, Used-for-Tracking=No, purposes={Analytics, App Functionality}. Matches `RelationOS/Resources/PrivacyInfo.xcprivacy` and `docs/app-privacy-answers.md`. Do **not** choose "Data Not Collected". StoreKit purchases are excluded (framework-mediated). Cross-device sync is on the roadmap and is off by default. On-device Foundation Models extraction never leaves the device and is not a collected data type.
 
 ## 6. Account deletion (5.1.1(v))
 
@@ -134,7 +134,7 @@ packaging to look up nutrition info" is a pass.
 Check every box that applies. Each one adds reviewer scrutiny and usually
 requires specific evidence in review notes.
 
-- [ ] AI / ML / generative content → may require 17+ rating, content filtering disclosure
+- [x] AI / ML / generative content → on-device Foundation Models only (notes → brief / facts / follow-ups + email digest). Capability-checked; heuristic fallback when unavailable. No training, no off-device model calls. Not advertised as a cloud AI product.
 - [ ] Parses user documents (PDF / contracts / receipts / recipes / UGC)
 - [ ] Uploads user files to a server
 - [x] Embeds/bundles third-party SDKs that collect data → PostHog (anonymous product analytics, see §5)

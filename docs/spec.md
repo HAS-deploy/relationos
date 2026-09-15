@@ -69,7 +69,7 @@ A private personal CRM that lives entirely on the user's iPhone — no account r
   - `NSUserNotificationsUsageDescription` (runtime via `UNUserNotificationCenter`) — "RelationOS sends reminders you set yourself."
   - Contacts / Calendar / Location permission strings are **removed in v1** — the underlying ingest features ship in v1.1.
 - **Account deletion:** trivial — user can wipe all data via Settings → "Delete all data" → confirm → SwiftData stack rebuilt empty. Required for 5.1.1(v).
-- **Privacy nutrition label answer (App Privacy):** **"The developer does not collect any data from this app."**
+- **Privacy nutrition label answer (App Privacy, v1 draft):** historically "no data collected". **v1.1.3 SoT:** PostHog is wired — choose **Yes, we collect data** (User ID + Product Interaction + Crash / Performance / Other Diagnostic). See `docs/app-privacy-answers.md`. Do not answer "Data Not Collected".
 
 ## 8. App Store metadata (locked)
 

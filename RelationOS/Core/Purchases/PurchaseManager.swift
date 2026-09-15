@@ -71,6 +71,20 @@ final class PurchaseManager: ObservableObject {
         // first launch where the install trial has just been stamped.
         sharedDefaults.set(composite, forKey: premiumKey)
         UserDefaults.standard.set(composite, forKey: premiumKey)
+        syncAnalyticsEntitlement()
+    }
+
+    /// Keep PostHog super-properties aligned with trial / paid / free.
+    func syncAnalyticsEntitlement() {
+        let segment: PortfolioAnalytics.UserSegment
+        if hasActiveSubscription {
+            segment = .premium
+        } else if isInIntroTrial {
+            segment = .trial
+        } else {
+            segment = .free
+        }
+        PortfolioAnalytics.shared.setEntitlement(isPremium: isPremium, segment: segment)
     }
 
     deinit { updatesTask?.cancel() }
@@ -154,7 +168,11 @@ final class PurchaseManager: ObservableObject {
         do {
             try await AppStore.sync()
             await refreshEntitlements()
-            if !isPremium { self.lastError = "No previous purchases found on this Apple ID." }
+            if isPremium {
+                PortfolioAnalytics.shared.track(PortfolioEvent.restoreCompleted)
+            } else {
+                self.lastError = "No previous purchases found on this Apple ID."
+            }
         } catch {
             self.lastError = error.localizedDescription
         }
@@ -178,6 +196,7 @@ final class PurchaseManager: ObservableObject {
             }
         }
         setSubscribed(entitled)
+        syncAnalyticsEntitlement()
     }
 
     /// Re-read the install-trial clock and republish derived state. Call
@@ -189,6 +208,7 @@ final class PurchaseManager: ObservableObject {
         if within != isInIntroTrial { self.isInIntroTrial = within }
         if days != introTrialDaysRemaining { self.introTrialDaysRemaining = days }
         recomputeIsPremium()
+        syncAnalyticsEntitlement()
     }
 
     private func recomputeIsPremium() {
@@ -205,6 +225,7 @@ final class PurchaseManager: ObservableObject {
                 Task { await DailyReconnectNotification.sync(isPremium: next) }
             }
         }
+        syncAnalyticsEntitlement()
     }
 
     private func observeTransactionUpdates() {

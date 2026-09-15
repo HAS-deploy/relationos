@@ -25,6 +25,10 @@ struct Contact: Identifiable, Hashable, Codable {
     /// Provider-side identifier (Contacts CNContact id, Google People
     /// resourceName, Graph contact id, vCard UID). Used to dedupe re-imports.
     var externalId: String?
+    /// On-device brief extracted from notes (Foundation Models when
+    /// available; heuristic fallback otherwise). Optional so older
+    /// UserDefaults blobs decode cleanly.
+    var memory: ContactMemory?
 
     init(id: UUID = UUID(),
          name: String,
@@ -35,7 +39,8 @@ struct Contact: Identifiable, Hashable, Codable {
          phone: String? = nil,
          email: String? = nil,
          source: ContactSource? = nil,
-         externalId: String? = nil) {
+         externalId: String? = nil,
+         memory: ContactMemory? = nil) {
         self.id = id
         self.name = name
         self.notes = notes
@@ -46,7 +51,20 @@ struct Contact: Identifiable, Hashable, Codable {
         self.email = email
         self.source = source
         self.externalId = externalId
+        self.memory = memory
     }
+}
+
+/// Structured memory pulled from a contact's free-text notes. Produced
+/// on-device; never transmitted. `usedOnDeviceModel` is true only when
+/// Apple's Foundation Models session succeeded.
+struct ContactMemory: Codable, Hashable {
+    var brief: String
+    var facts: [String]
+    var followUps: [String]
+    var generatedAt: Date
+    var usedOnDeviceModel: Bool
+    var fallbackReason: String?
 }
 
 enum ContactSource: String, Codable, Hashable {

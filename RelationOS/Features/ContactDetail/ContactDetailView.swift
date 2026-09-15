@@ -18,6 +18,7 @@ struct ContactDetailView: View {
     @State private var showNotificationPrePrompt: Bool = false
     @State private var reminderAddedTrigger: Int = 0
     @State private var markedTouchedTrigger: Int = 0
+    @State private var isExtractingMemory = false
     @AppStorage("relationos.reminders.preprompt_shown") private var prePromptShown: Bool = false
 
     init(contact: Contact) {
@@ -29,12 +30,16 @@ struct ContactDetailView: View {
             contactInfoSection
             ContactEmailsSection(contact: workingContact)
             notesSection
+            memorySection
             tagsSection
             interactionSection
             remindersSection
         }
         .navigationTitle(workingContact.name)
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            PortfolioAnalytics.shared.trackScreen("contact_detail")
+        }
         .onChange(of: workingContact) { newValue in
             contacts.updateContact(newValue)
         }
@@ -92,6 +97,75 @@ struct ContactDetailView: View {
         Section("Notes") {
             TextEditor(text: $workingContact.notes)
                 .frame(minHeight: 120)
+        }
+    }
+
+    @ViewBuilder
+    private var memorySection: some View {
+        Section {
+            if isExtractingMemory {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Extracting on-device…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else if let memory = workingContact.memory {
+                if !memory.brief.isEmpty {
+                    Text(memory.brief)
+                        .font(.subheadline)
+                }
+                if !memory.facts.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Remembered").font(.caption.bold())
+                        ForEach(Array(memory.facts.enumerated()), id: \.offset) { _, fact in
+                            HStack(alignment: .top, spacing: 6) {
+                                Text("•").foregroundStyle(.secondary)
+                                Text(fact).font(.subheadline)
+                            }
+                        }
+                    }
+                }
+                if !memory.followUps.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Follow-ups").font(.caption.bold())
+                        ForEach(Array(memory.followUps.enumerated()), id: \.offset) { _, item in
+                            HStack(alignment: .top, spacing: 6) {
+                                Text("•").foregroundStyle(.secondary)
+                                Text(item).font(.subheadline)
+                            }
+                        }
+                    }
+                }
+                if let reason = memory.fallbackReason {
+                    Label(reason, systemImage: "info.circle")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                if memory.usedOnDeviceModel {
+                    Text("Generated on-device \(memory.generatedAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            } else {
+                Text("Turn notes into a short brief, remembered facts, and follow-ups. Runs on this device when Apple Intelligence is available.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Button {
+                Task { await extractMemory() }
+            } label: {
+                Label(
+                    workingContact.memory == nil ? "Extract from notes" : "Refresh from notes",
+                    systemImage: "sparkles"
+                )
+            }
+            .disabled(isExtractingMemory || workingContact.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        } header: {
+            Text("On-device brief")
+        } footer: {
+            Text("Notes stay on this iPhone. Extraction uses Apple's on-device Foundation Models when available — nothing is sent off-device, and your notes are not used for training.")
         }
     }
 
@@ -296,6 +370,21 @@ struct ContactDetailView: View {
                 }
             }
         }
+    }
+
+    @MainActor
+    private func extractMemory() async {
+        let notes = workingContact.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !notes.isEmpty else { return }
+        isExtractingMemory = true
+        defer { isExtractingMemory = false }
+        let interactions = contacts.interactionsFor(contactId: workingContact.id)
+        let memory = await ContactMemoryExtractor.shared.extract(
+            contact: workingContact,
+            interactions: interactions
+        )
+        workingContact.memory = memory
+        contacts.updateContact(workingContact)
     }
 
     private func addReminder() {

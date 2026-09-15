@@ -55,12 +55,30 @@ struct EmailSummarizer {
             )
         }
         #if canImport(FoundationModels)
-        if #available(iOS 26, *), SystemLanguageModel.default.availability == .available {
-            do {
-                return try await foundationModelDigest(contact: contact, emails: limited)
-            } catch {
+        if #available(iOS 26, *) {
+            switch SystemLanguageModel.default.availability {
+            case .available:
+                do {
+                    return try await foundationModelDigest(contact: contact, emails: limited)
+                } catch {
+                    return fallback(contact: contact, emails: limited,
+                                    reason: "Summarization failed (\(error)); showing subject list.")
+                }
+            case .unavailable(.deviceNotEligible):
                 return fallback(contact: contact, emails: limited,
-                                reason: "Summarization failed (\(error)); showing subject list.")
+                                reason: "This device is not eligible for Apple Intelligence. Showing the subject list instead.")
+            case .unavailable(.appleIntelligenceNotEnabled):
+                return fallback(contact: contact, emails: limited,
+                                reason: "Turn on Apple Intelligence in Settings to summarize on-device. Showing the subject list instead.")
+            case .unavailable(.modelNotReady):
+                return fallback(contact: contact, emails: limited,
+                                reason: "The on-device model is still downloading. Showing the subject list for now.")
+            case .unavailable:
+                return fallback(contact: contact, emails: limited,
+                                reason: "Email summarization is unavailable on this device. Showing the subject list instead.")
+            @unknown default:
+                return fallback(contact: contact, emails: limited,
+                                reason: "Email summarization is unavailable on this device. Showing the subject list instead.")
             }
         }
         #endif

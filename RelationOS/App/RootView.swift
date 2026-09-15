@@ -5,7 +5,17 @@ struct RootView: View {
     @State private var selection: Tab = RootView.initialTab()
     @State private var paywallTrigger: PremiumFeature?
 
-    enum Tab: Hashable { case contacts, reconnect, settings }
+    enum Tab: Hashable {
+        case contacts, reconnect, settings
+
+        var analyticsName: String {
+            switch self {
+            case .contacts: return "contacts"
+            case .reconnect: return "reconnect"
+            case .settings: return "settings"
+            }
+        }
+    }
 
     static func initialTab() -> Tab {
         #if DEBUG
@@ -47,6 +57,7 @@ struct RootView: View {
                 .environmentObject(purchases)
         }
         .onAppear {
+            PortfolioAnalytics.shared.trackScreen(selection.analyticsName)
             #if DEBUG
             if UserDefaults.standard.bool(forKey: "RELATIONOS_SHOW_PAYWALL") {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
@@ -54,6 +65,9 @@ struct RootView: View {
                 }
             }
             #endif
+        }
+        .onChange(of: selection) { tab in
+            PortfolioAnalytics.shared.trackScreen(tab.analyticsName)
         }
     }
 }

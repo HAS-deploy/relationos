@@ -19,10 +19,10 @@
       - No user-generated content sent to any server
       - OAuth tokens stored locally for BYOK use do not count as "collected"
 
-- [ ] **Yes, we or our partners collect data.**
+- [x] **Yes, we or our partners collect data.**
       Answer the data-type matrix below.
 
-**For RelationOS: Yes, we collect data.** PostHog is wired (canonical portfolio pattern; same key as 12 sibling apps). Privacy-strict configuration — no person profiles, no session replay, no screen views, no app lifecycle events. Anonymous events only.
+**For RelationOS: Yes, we collect data.** Do **not** choose "Data Not Collected". PostHog is wired (canonical portfolio pattern; same key as 12 sibling apps). Privacy-strict configuration — `personProfiles=.never`, no session replay, SDK autocapture off. We emit explicit `install`, `app.foregrounded`, `screen.viewed`, and paywall events tagged with a random per-install identifier. Anonymous events only.
 
 ### Required answers in ASC App Privacy questionnaire
 
@@ -38,7 +38,7 @@ Click "Yes, we collect data," then answer the matrix exactly as below:
 #### Usage data
 | Type | Collected | Linked | Tracking | Purposes |
 |---|---|---|---|---|
-| Product interaction | **Yes** (paywall taps, feature taps) | **No** | **No** | Analytics |
+| Product interaction | **Yes** (paywall taps, explicit `screen.viewed`, feature taps) | **No** | **No** | Analytics |
 | Advertising data | No | — | — | — |
 | Other usage data | No | — | — | — |
 
@@ -46,8 +46,8 @@ Click "Yes, we collect data," then answer the matrix exactly as below:
 | Type | Collected | Linked | Tracking | Purposes |
 |---|---|---|---|---|
 | Crash data | **Yes** (PostHog crash diagnostics) | **No** | **No** | App functionality, Analytics |
-| Performance data | No | — | — | — |
-| Other diagnostic data | No | — | — | — |
+| Performance data | **Yes** (SDK envelope / MetricKit-adjacent diagnostics) | **No** | **No** | Analytics, App functionality |
+| Other diagnostic data | **Yes** (PostHog SDK diagnostic metadata) | **No** | **No** | Analytics, App functionality |
 
 All other categories: **Not Collected.** No name/email/phone, no health, no financial, no location, no contacts (the user's iPhone contacts are read on-device only — never transmitted), no user content (notes/tags stay on-device), no browsing/search history, no purchase history (StoreKit-managed, not collected by us), no environment/body, no sensitive info.
 
@@ -122,7 +122,7 @@ For every data type below, answer:
 ### Identifiers
 | Type | Collected | Linked | Tracking | Purposes |
 |---|---|---|---|---|
-| User ID |  |  |  |  |
+| User ID | Yes (random per-install ID) | No | No | Analytics |
 | Device ID |  |  |  |  |
 | Advertising ID (IDFA) |  |  |  |  |
 
@@ -134,16 +134,16 @@ For every data type below, answer:
 ### Usage data
 | Type | Collected | Linked | Tracking | Purposes |
 |---|---|---|---|---|
-| Product interaction |  |  |  |  |
+| Product interaction | Yes | No | No | Analytics |
 | Advertising data |  |  |  |  |
 | Other usage data |  |  |  |  |
 
 ### Diagnostics
 | Type | Collected | Linked | Tracking | Purposes |
 |---|---|---|---|---|
-| Crash data |  |  |  |  |
-| Performance data |  |  |  |  |
-| Other diagnostic data |  |  |  |  |
+| Crash data | Yes | No | No | App functionality, Analytics |
+| Performance data | Yes | No | No | Analytics, App functionality |
+| Other diagnostic data | Yes | No | No | Analytics, App functionality |
 
 ### Surroundings / body
 | Type | Collected | Linked | Tracking | Purposes |
