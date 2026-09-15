@@ -21,7 +21,7 @@ import Foundation
 /// switch to StoreKit's `Transaction.deviceVerification` UUID, but for
 /// v1.1 the simpler local stamp is enough.
 struct IntroTrialClock {
-    static let length: TimeInterval = 14 * 24 * 60 * 60     // 14 days
+    static let length: TimeInterval = TimeInterval(PricingConfig.installTrialDays) * 24 * 60 * 60
     private static let installAtKey = "relationos.intro_trial.install_at"
     private static let consumedKey  = "relationos.intro_trial.consumed"
 
