@@ -100,5 +100,6 @@ Units that need an iOS host (`xcodebuild test -scheme RelationOS`) were not exec
 
 - Worktree: `/Users/tony/Developer/builder-relationos-pr2-20260915` @ PR #2 head
 - Fixed stale `PricingConfigTests.testPaywallBenefitsMatchTrimmedV1Scope` (expected 4 bullets incl. separate cooling; SoT is 3 with cooling folded into Daily Reconnect line)
-- Re-run: `xcodebuild test -scheme RelationOS -only-testing:RelationOSTests` → see follow-up log
-- **No ASC submit**
+- Re-run: `xcodebuild test -scheme RelationOS -only-testing:RelationOSTests` → **42/42 PASS** (`** TEST SUCCEEDED **`)
+- Log: `/tmp/ros-pr2-tests2.log`
+- **No ASC submit** — ready for CoS/QA gate
